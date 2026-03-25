@@ -40,6 +40,16 @@ devflow setup              # 互動式收集參數 → 產生 scaffold.config.js
 /scaffold                  # 讀取 config → 自動建置 Repos + 框架 + Trello + 分支策略
 ```
 
+## Trello 憑證取得
+
+`devflow init` 過程中會需要 Trello API Key 和 Token，取得步驟：
+
+1. 前往 https://trello.com/power-ups/admin
+2. 點「**New**」建立一個 Power-Up（名稱隨意，如 devflow）
+3. 建立後點進該 Power-Up → 左側「**API Key**」→ 複製 API Key
+4. 在同一頁面，點擊 API Key 右側的「**權杖**」超連結
+5. 授權後，頁面會顯示 Token，複製即可
+
 ## 組員加入
 
 ```bash
