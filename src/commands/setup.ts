@@ -78,7 +78,7 @@ export async function setupCommand(): Promise<void> {
 
   const cfToken = await input({ message: 'Cloudflare API Token（選填，Enter 跳過）:' });
   console.log();
-  console.log('  Account ID 位置：Cloudflare Dashboard → 任一網域 → Overview → 右側欄最下方「API」區塊');
+  console.log('  Account ID 位置：Cloudflare Dashboard → 任一網域 → Overview → 右側「API」區塊 →「帳戶識別碼」');
   console.log();
   const cfAccount = await input({ message: 'Cloudflare Account ID（選填，Enter 跳過）:' });
 
