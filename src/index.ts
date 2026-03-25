@@ -25,7 +25,8 @@ program
 program
   .command('init')
   .description('初始化新專案（設定 Trello + Board + Repos）')
-  .action(initCommand);
+  .option('--from-repo', '從目前目錄的 package.json + .gitmodules 自動偵測專案設定')
+  .action((options) => initCommand(options));
 
 program
   .command('link')

@@ -1,4 +1,6 @@
 import { input, password, confirm, select } from '@inquirer/prompts';
+import { existsSync, readFileSync } from 'node:fs';
+import { join, basename } from 'node:path';
 import { loadGlobalConfig, saveGlobalConfig, saveProjectConfig, getConfigBase } from '../utils/config.js';
 import {
   getBoardLists, getBoardLabels, getBoardMembers,
@@ -14,33 +16,130 @@ const DEFAULT_LABELS: Array<{ name: string; color: string }> = [
   { name: 'urgent', color: 'red' },
 ];
 
-export async function initCommand(): Promise<void> {
+interface DetectedProject {
+  name: string;
+  repos: Record<string, RepoEntry>;
+}
+
+/**
+ * Auto-detect project from current directory:
+ * - Read package.json for project name
+ * - Read .gitmodules for submodule repos
+ * - Guess repo roles from directory names
+ */
+function detectProject(): DetectedProject | null {
+  const cwd = process.cwd();
+
+  // Check package.json
+  const pkgPath = join(cwd, 'package.json');
+  if (!existsSync(pkgPath)) return null;
+
+  let pkg: { name?: string };
+  try {
+    pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+  } catch {
+    return null;
+  }
+
+  // Extract project name from package.json name (e.g. "WT-platform" → "wt")
+  const rawName = pkg.name || '';
+  const name = rawName
+    .replace(/-platform$/i, '')
+    .replace(/[-_]?workspace$/i, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '');
+
+  if (!name) return null;
+
+  // Check .gitmodules for submodule repos
+  const gitmodulesPath = join(cwd, '.gitmodules');
+  const repos: Record<string, RepoEntry> = {};
+
+  if (existsSync(gitmodulesPath)) {
+    const content = readFileSync(gitmodulesPath, 'utf-8');
+    const submoduleRegex = /\[submodule\s+"([^"]+)"\]\s+path\s*=\s*(\S+)\s+url\s*=\s*(\S+)/g;
+    let match;
+    while ((match = submoduleRegex.exec(content)) !== null) {
+      const subName = match[1]!;
+      const subPath = match[2]!;
+      const role = guessRole(subPath);
+      repos[role] = { name: subName, role };
+    }
+  }
+
+  // If no submodules, check for common subdirectories
+  if (Object.keys(repos).length === 0) {
+    const commonDirs = ['ec', 'be', 'ims', 'web', 'api', 'admin', 'frontend', 'backend'];
+    for (const dir of commonDirs) {
+      const fullName = `${name}-${dir}`;
+      if (existsSync(join(cwd, fullName)) || existsSync(join(cwd, dir))) {
+        const actualDir = existsSync(join(cwd, fullName)) ? fullName : dir;
+        const role = guessRole(actualDir);
+        repos[role] = { name: actualDir, role };
+      }
+    }
+  }
+
+  return Object.keys(repos).length > 0 ? { name, repos } : null;
+}
+
+function guessRole(dirName: string): string {
+  const lower = dirName.toLowerCase();
+  if (lower.includes('ec') || lower.includes('web') || lower.includes('frontend')) return 'frontend';
+  if (lower.includes('ims') || lower.includes('admin')) return 'admin';
+  if (lower.includes('be') || lower.includes('api') || lower.includes('backend')) return 'backend';
+  if (lower.includes('mobile') || lower.includes('app')) return 'mobile';
+  return basename(dirName).toLowerCase();
+}
+
+export async function initCommand(options: { fromRepo?: boolean }): Promise<void> {
   log.info('Devflow 專案初始化');
   console.log();
 
-  // ── Step 1: Project name ──
-  const projectName = await input({
-    message: '專案名稱（英文 slug，如 my-project）:',
-    validate: (v) => (/^[a-z0-9-]+$/.test(v) ? true : '只能用小寫英文、數字、連字號'),
-  });
+  // ── Auto-detect or --from-repo ──
+  const detected = detectProject();
+  let projectName: string;
+  let repos: Record<string, RepoEntry>;
 
-  // ── Step 2: Repos ──
-  const repos: Record<string, RepoEntry> = {};
-  let addMore = true;
-  while (addMore) {
-    const repoName = await input({
-      message: 'Repo 名稱（如 my-app-web）:',
-      validate: (v) => (v.length > 0 ? true : '必填'),
+  if (detected && (options.fromRepo || true)) {
+    // Auto-detected — show what we found and confirm
+    log.success(`偵測到既有專案: ${detected.name}`);
+    log.info(`Repos:`);
+    for (const [role, repo] of Object.entries(detected.repos)) {
+      log.info(`  ${repo.name} (${role})`);
+    }
+    console.log();
+
+    const useDetected = await confirm({
+      message: '使用偵測到的設定？',
+      default: true,
     });
-    const role = await input({
-      message: `${repoName} 的角色（如 frontend / backend / mobile）:`,
-      validate: (v) => (v.length > 0 ? true : '必填'),
+
+    if (useDetected) {
+      projectName = detected.name;
+      repos = detected.repos;
+    } else {
+      // Fall through to manual input
+      projectName = await input({
+        message: '專案名稱（英文 slug）:',
+        default: detected.name,
+        validate: (v) => (/^[a-z0-9-]+$/.test(v) ? true : '只能用小寫英文、數字、連字號'),
+      });
+      repos = await collectRepos();
+    }
+  } else if (options.fromRepo) {
+    log.error('無法偵測專案資訊，請確認目前在工作區根目錄（含 package.json 和 .gitmodules）');
+    process.exit(1);
+  } else {
+    // No detection — full manual
+    projectName = await input({
+      message: '專案名稱（英文 slug，如 my-project）:',
+      validate: (v) => (/^[a-z0-9-]+$/.test(v) ? true : '只能用小寫英文、數字、連字號'),
     });
-    repos[role] = { name: repoName, role };
-    addMore = await confirm({ message: '還要新增其他 repo 嗎？', default: false });
+    repos = await collectRepos();
   }
 
-  // ── Step 3: Trello credentials ──
+  // ── Trello credentials ──
   const existingGlobal = loadGlobalConfig();
   let apiKey: string;
   let token: string;
@@ -62,112 +161,10 @@ export async function initCommand(): Promise<void> {
     token = await password({ message: 'Trello Token:', validate: (v) => v.length > 0 || '必填' });
   }
 
-  // ── Step 4: Board ──
-  const boardMode = await select({
-    message: 'Trello Board:',
-    choices: [
-      { name: '使用現有的 Board', value: 'existing' },
-      { name: '建立新的 Board（自動建立 Lists 和 Labels）', value: 'new' },
-    ],
-  });
+  // ── Board ──
+  const { boardId, boardUrl, lists, labels, members } = await setupBoard(apiKey, token, projectName);
 
-  let boardId: string;
-  let boardUrl: string;
-  const lists: Record<string, string> = {};
-  const labels: Record<string, string> = {};
-  const members: Record<string, string> = {};
-
-  if (boardMode === 'new') {
-    const boardName = await input({
-      message: 'Board 名稱:',
-      default: projectName.toUpperCase(),
-      validate: (v) => v.length > 0 || '必填',
-    });
-
-    log.info('正在建立 Trello Board...');
-    const board = await createBoard(apiKey, token, boardName);
-    boardId = board.id;
-    boardUrl = board.shortUrl;
-    log.success(`Board 已建立: ${boardUrl}`);
-
-    // Create lists (reverse order so they appear correctly)
-    log.info('正在建立 Lists...');
-    const listNameMap: Record<string, string> = {
-      Backlog: 'backlog', 'To Do': 'todo', 'In Progress': 'inProgress',
-      'In Review': 'inReview', Done: 'done',
-    };
-    for (let i = DEFAULT_LISTS.length - 1; i >= 0; i--) {
-      const l = await createList(apiKey, token, boardId, DEFAULT_LISTS[i]!, (i + 1) * 1024);
-      const key = listNameMap[DEFAULT_LISTS[i]!];
-      if (key) lists[key] = l.id;
-    }
-
-    // Create labels
-    log.info('正在建立 Labels...');
-    for (const lb of DEFAULT_LABELS) {
-      const created = await createLabel(apiKey, token, boardId, lb.name, lb.color);
-      labels[lb.name] = created.id;
-    }
-
-    // Fetch members
-    const boardMembers = await getBoardMembers(apiKey, token, boardId);
-    for (const m of boardMembers) {
-      members[m.username] = m.id;
-    }
-  } else {
-    // Existing board
-    const boardInput = await input({
-      message: 'Board ID 或 URL（如 trello.com/b/xxxxx/...）:',
-      validate: (v) => v.length > 0 || '必填',
-    });
-    // Extract board ID from URL or use as-is
-    const urlMatch = boardInput.match(/trello\.com\/b\/([^/]+)/);
-    boardId = urlMatch ? urlMatch[1] : boardInput;
-    boardUrl = `https://trello.com/b/${boardId}`;
-
-    log.info('正在從 Trello 讀取 Board 資料...');
-    const [fetchedLists, fetchedLabels, fetchedMembers] = await Promise.all([
-      getBoardLists(apiKey, token, boardId),
-      getBoardLabels(apiKey, token, boardId),
-      getBoardMembers(apiKey, token, boardId),
-    ]);
-
-    const listNameMap: Record<string, string> = {
-      Backlog: 'backlog', 'To Do': 'todo', 'In Progress': 'inProgress',
-      'In Review': 'inReview', Done: 'done',
-    };
-    for (const l of fetchedLists) {
-      const key = listNameMap[l.name];
-      if (key) lists[key] = l.id;
-    }
-    for (const lb of fetchedLabels) {
-      if (lb.name) labels[lb.name] = lb.id;
-    }
-    for (const m of fetchedMembers) {
-      members[m.username] = m.id;
-    }
-
-    // Check if required lists exist
-    const missing = DEFAULT_LISTS.filter((n) => !listNameMap[n] || !lists[listNameMap[n]!]);
-    if (missing.length) {
-      log.warn(`Board 缺少以下 Lists: ${missing.join(', ')}`);
-      const autoCreate = await confirm({
-        message: '是否自動建立缺少的 Lists？',
-        default: true,
-      });
-      if (autoCreate) {
-        for (const name of missing) {
-          const key = listNameMap[name];
-          if (key && !lists[key]) {
-            const created = await createList(apiKey, token, boardId, name, DEFAULT_LISTS.indexOf(name) * 1024 + 1024);
-            lists[key] = created.id;
-          }
-        }
-      }
-    }
-  }
-
-  // ── Step 5: Save ──
+  // ── Save ──
   const globalConfig: GlobalConfig = {
     activeProject: projectName,
     trello: { apiKey, token },
@@ -191,4 +188,121 @@ export async function initCommand(): Promise<void> {
   log.info(`Members: ${Object.keys(members).join(', ')}`);
   console.log();
   log.info('下一步：到每個 repo 內執行 devflow link 來連結專案');
+}
+
+async function collectRepos(): Promise<Record<string, RepoEntry>> {
+  const repos: Record<string, RepoEntry> = {};
+  let addMore = true;
+  while (addMore) {
+    const repoName = await input({
+      message: 'Repo 名稱（如 my-app-web）:',
+      validate: (v) => (v.length > 0 ? true : '必填'),
+    });
+    const role = await input({
+      message: `${repoName} 的角色（如 frontend / backend / mobile）:`,
+      validate: (v) => (v.length > 0 ? true : '必填'),
+    });
+    repos[role] = { name: repoName, role };
+    addMore = await confirm({ message: '還要新增其他 repo 嗎？', default: false });
+  }
+  return repos;
+}
+
+async function setupBoard(apiKey: string, token: string, projectName: string) {
+  const boardMode = await select({
+    message: 'Trello Board:',
+    choices: [
+      { name: '建立新的 Board（自動建立 Lists 和 Labels）', value: 'new' },
+      { name: '使用現有的 Board', value: 'existing' },
+    ],
+  });
+
+  let boardId: string;
+  let boardUrl: string;
+  const lists: Record<string, string> = {};
+  const labels: Record<string, string> = {};
+  const members: Record<string, string> = {};
+
+  const listNameMap: Record<string, string> = {
+    Backlog: 'backlog', 'To Do': 'todo', 'In Progress': 'inProgress',
+    'In Review': 'inReview', Done: 'done',
+  };
+
+  if (boardMode === 'new') {
+    const boardName = await input({
+      message: 'Board 名稱:',
+      default: projectName.toUpperCase(),
+      validate: (v) => v.length > 0 || '必填',
+    });
+
+    log.info('正在建立 Trello Board...');
+    const board = await createBoard(apiKey, token, boardName);
+    boardId = board.id;
+    boardUrl = board.shortUrl;
+    log.success(`Board 已建立: ${boardUrl}`);
+
+    log.info('正在建立 Lists...');
+    for (let i = DEFAULT_LISTS.length - 1; i >= 0; i--) {
+      const l = await createList(apiKey, token, boardId, DEFAULT_LISTS[i]!, (i + 1) * 1024);
+      const key = listNameMap[DEFAULT_LISTS[i]!];
+      if (key) lists[key] = l.id;
+    }
+
+    log.info('正在建立 Labels...');
+    for (const lb of DEFAULT_LABELS) {
+      const created = await createLabel(apiKey, token, boardId, lb.name, lb.color);
+      labels[lb.name] = created.id;
+    }
+
+    const boardMembers = await getBoardMembers(apiKey, token, boardId);
+    for (const m of boardMembers) {
+      members[m.username] = m.id;
+    }
+  } else {
+    const boardInput = await input({
+      message: 'Board ID 或 URL（如 trello.com/b/xxxxx/...）:',
+      validate: (v) => v.length > 0 || '必填',
+    });
+    const urlMatch = boardInput.match(/trello\.com\/b\/([^/]+)/);
+    boardId = urlMatch ? urlMatch[1] : boardInput;
+    boardUrl = `https://trello.com/b/${boardId}`;
+
+    log.info('正在從 Trello 讀取 Board 資料...');
+    const [fetchedLists, fetchedLabels, fetchedMembers] = await Promise.all([
+      getBoardLists(apiKey, token, boardId),
+      getBoardLabels(apiKey, token, boardId),
+      getBoardMembers(apiKey, token, boardId),
+    ]);
+
+    for (const l of fetchedLists) {
+      const key = listNameMap[l.name];
+      if (key) lists[key] = l.id;
+    }
+    for (const lb of fetchedLabels) {
+      if (lb.name) labels[lb.name] = lb.id;
+    }
+    for (const m of fetchedMembers) {
+      members[m.username] = m.id;
+    }
+
+    const missing = DEFAULT_LISTS.filter((n) => !listNameMap[n] || !lists[listNameMap[n]!]);
+    if (missing.length) {
+      log.warn(`Board 缺少以下 Lists: ${missing.join(', ')}`);
+      const autoCreate = await confirm({
+        message: '是否自動建立缺少的 Lists？',
+        default: true,
+      });
+      if (autoCreate) {
+        for (const name of missing) {
+          const key = listNameMap[name];
+          if (key && !lists[key]) {
+            const created = await createList(apiKey, token, boardId, name, DEFAULT_LISTS.indexOf(name) * 1024 + 1024);
+            lists[key] = created.id;
+          }
+        }
+      }
+    }
+  }
+
+  return { boardId, boardUrl, lists, labels, members };
 }
