@@ -1,6 +1,7 @@
 import { input, confirm, select } from '@inquirer/prompts';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, basename } from 'node:path';
+import { execSync } from 'node:child_process';
 import { loadGlobalConfig, saveGlobalConfig, saveProjectConfig, getConfigBase } from '../utils/config.js';
 import {
   getBoardLists, getBoardLabels, getBoardMembers,
@@ -8,6 +9,9 @@ import {
 } from '../services/trello.js';
 import { log } from '../utils/logger.js';
 import type { GlobalConfig, ProjectConfig, RepoEntry } from '../types/index.js';
+
+/** Suffixes that indicate a repo role, used to strip from project name */
+const ROLE_SUFFIXES = ['ec', 'be', 'ims', 'web', 'api', 'admin', 'frontend', 'backend', 'mobile', 'app'];
 
 const DEFAULT_LISTS = ['Backlog', 'To Do', 'In Progress', 'In Review', 'Done'];
 const DEFAULT_LABELS: Array<{ name: string; color: string }> = [
@@ -22,32 +26,62 @@ interface DetectedProject {
 }
 
 /**
+ * Strip project-level and role suffixes to extract the core project name.
+ * e.g. "WT-platform" → "wt", "WT-ec" → "wt", "myshop-backend" → "myshop"
+ */
+function extractProjectName(raw: string): string {
+  const roleSuffixPattern = ROLE_SUFFIXES.join('|');
+  return raw
+    .replace(/-platform$/i, '')
+    .replace(/[-_]?workspace$/i, '')
+    .replace(new RegExp(`[-_]?(${roleSuffixPattern})$`, 'i'), '')
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '');
+}
+
+/**
+ * Check if current directory is inside a git repo.
+ */
+function isInsideGitRepo(): boolean {
+  try {
+    execSync('git rev-parse --is-inside-work-tree', { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Auto-detect project from current directory:
- * - Read package.json for project name
- * - Read .gitmodules for submodule repos
- * - Guess repo roles from directory names
+ * 1. Read package.json for project name (if available)
+ * 2. Fallback to directory name (if inside a git repo)
+ * 3. Read .gitmodules for submodule repos
+ * 4. Check for common subdirectories
+ * 5. Treat current directory itself as a single repo
  */
 function detectProject(): DetectedProject | null {
   const cwd = process.cwd();
+  const dirName = basename(cwd);
 
-  // Check package.json
+  // Try to get project name from package.json first, fallback to directory name
+  let name = '';
   const pkgPath = join(cwd, 'package.json');
-  if (!existsSync(pkgPath)) return null;
-
-  let pkg: { name?: string };
-  try {
-    pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
-  } catch {
-    return null;
+  if (existsSync(pkgPath)) {
+    try {
+      const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8')) as { name?: string };
+      if (pkg.name) {
+        name = extractProjectName(pkg.name);
+      }
+    } catch {
+      // ignore parse errors
+    }
   }
 
-  // Extract project name from package.json name (e.g. "WT-platform" → "wt")
-  const rawName = pkg.name || '';
-  const name = rawName
-    .replace(/-platform$/i, '')
-    .replace(/[-_]?workspace$/i, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9-]/g, '');
+  // Fallback: extract project name from directory name (e.g. "WT-ec" → "wt")
+  if (!name) {
+    if (!isInsideGitRepo()) return null;
+    name = extractProjectName(dirName);
+  }
 
   if (!name) return null;
 
@@ -69,7 +103,7 @@ function detectProject(): DetectedProject | null {
 
   // If no submodules, check for common subdirectories
   if (Object.keys(repos).length === 0) {
-    const commonDirs = ['ec', 'be', 'ims', 'web', 'api', 'admin', 'frontend', 'backend'];
+    const commonDirs = ROLE_SUFFIXES;
     for (const dir of commonDirs) {
       const fullName = `${name}-${dir}`;
       if (existsSync(join(cwd, fullName)) || existsSync(join(cwd, dir))) {
@@ -80,7 +114,14 @@ function detectProject(): DetectedProject | null {
     }
   }
 
-  return Object.keys(repos).length > 0 ? { name, repos } : null;
+  // If still no repos found, treat current directory as a single repo
+  // (e.g. team member cloned only one repo without the workspace)
+  if (Object.keys(repos).length === 0) {
+    const role = guessRole(dirName);
+    repos[role] = { name: dirName, role };
+  }
+
+  return { name, repos };
 }
 
 function guessRole(dirName: string): string {
