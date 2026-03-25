@@ -212,9 +212,12 @@ export async function initCommand(options: { fromRepo?: boolean }): Promise<void
       console.log(`     cd ${repo.name} && devflow link`);
     }
     console.log();
-    console.log('  2. 在每個 repo 建立 develop 分支（若尚未建立）：');
+    console.log('  2. 在每個 repo 建立 develop 和 release 分支（若尚未建立）：');
     for (const repo of Object.values(repos)) {
-      console.log(`     cd ${repo.name} && git checkout -b develop && git push -u origin develop`);
+      console.log(`     cd ${repo.name}`);
+      console.log(`       git checkout -b develop && git push -u origin develop`);
+      console.log(`       git checkout -b release && git push -u origin release`);
+      console.log(`       git checkout develop`);
     }
     console.log();
     console.log('  3. 匯出設定檔分享給組員：');
@@ -242,9 +245,12 @@ export async function initCommand(options: { fromRepo?: boolean }): Promise<void
       console.log(`     cd ${repo.name} && devflow link`);
     }
     console.log();
-    console.log('  4. 在每個 repo 建立 develop 分支：');
+    console.log('  4. 在每個 repo 建立 develop 和 release 分支：');
     for (const repo of Object.values(repos)) {
-      console.log(`     cd ${repo.name} && git checkout -b develop && git push -u origin develop`);
+      console.log(`     cd ${repo.name}`);
+      console.log(`       git checkout -b develop && git push -u origin develop`);
+      console.log(`       git checkout -b release && git push -u origin release`);
+      console.log(`       git checkout develop`);
     }
     console.log();
     console.log('  5. 匯出設定檔分享給組員：');
