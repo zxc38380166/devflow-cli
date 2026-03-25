@@ -1,4 +1,4 @@
-import { input, password, confirm, select } from '@inquirer/prompts';
+import { input, confirm, select } from '@inquirer/prompts';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import { loadGlobalConfig, saveGlobalConfig, saveProjectConfig, getConfigBase } from '../utils/config.js';
@@ -156,7 +156,7 @@ export async function initCommand(options: { fromRepo?: boolean }): Promise<void
       console.log();
       log.info('請輸入新的 Trello 憑證（取得方式：https://trello.com/power-ups/admin）');
       apiKey = await input({ message: 'Trello API Key:', validate: (v) => v.length > 0 || '必填' });
-      token = await password({ message: 'Trello Token:', validate: (v) => v.length > 0 || '必填' });
+      token = await input({ message: 'Trello Token:', validate: (v) => v.length > 0 || '必填' });
     }
   } else {
     console.log();
@@ -168,7 +168,7 @@ export async function initCommand(options: { fromRepo?: boolean }): Promise<void
     console.log('  4. 同頁面點「Token」連結 → 授權後複製 Token');
     console.log();
     apiKey = await input({ message: 'Trello API Key:', validate: (v) => v.length > 0 || '必填' });
-    token = await password({ message: 'Trello Token:', validate: (v) => v.length > 0 || '必填' });
+    token = await input({ message: 'Trello Token:', validate: (v) => v.length > 0 || '必填' });
   }
 
   // ── Board ──
