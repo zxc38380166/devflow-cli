@@ -68,9 +68,16 @@ export async function setupCommand(): Promise<void> {
   // ── Step 3: Cloudflare ──
   console.log();
   log.info('=== 3/5 Cloudflare 設定（選填，Enter 跳過）===');
+  console.log();
+  console.log('  用於 DNS 設定與 Pages 文件部署，取得方式：');
+  console.log('  1. 登入 https://dash.cloudflare.com');
+  console.log('  2. API Token：右上角頭像 →「My Profile」→「API Tokens」→「Create Token」');
+  console.log('     建議使用「Edit zone DNS」+「Cloudflare Pages」權限');
+  console.log('  3. Account ID：任一網域的「Overview」頁面右下角');
+  console.log();
 
-  const cfToken = await input({ message: 'Cloudflare API Token（選填）:' });
-  const cfAccount = await input({ message: 'Cloudflare Account ID（選填）:' });
+  const cfToken = await input({ message: 'Cloudflare API Token（選填，Enter 跳過）:' });
+  const cfAccount = await input({ message: 'Cloudflare Account ID（選填，Enter 跳過）:' });
 
   // ── Step 4: Domains ──
   console.log();
