@@ -154,8 +154,17 @@ export async function initCommand(options: { fromRepo?: boolean }): Promise<void
       token = existingGlobal.trello.token;
     } else {
       console.log();
-      log.info('請輸入新的 Trello 憑證（取得方式：https://trello.com/power-ups/admin）');
+      log.info('請輸入新的 Trello 憑證，取得步驟：');
+      console.log();
+      console.log('  1. 前往 https://trello.com/power-ups/admin');
+      console.log('  2. 點選「New」建立 Power-Up（名稱隨意，如 devflow）');
+      console.log('  3. 建立後點進 Power-Up → 左側「API Key」→ 複製 API Key');
+      console.log();
       apiKey = await input({ message: 'Trello API Key:', validate: (v) => v.length > 0 || '必填' });
+      console.log();
+      console.log('  4. 回到同頁面，點擊 API Key 右側的「Token」超連結');
+      console.log('  5. 授權後複製頁面上顯示的 Token');
+      console.log();
       token = await input({ message: 'Trello Token:', validate: (v) => v.length > 0 || '必填' });
     }
   } else {
