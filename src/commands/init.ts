@@ -200,7 +200,64 @@ export async function initCommand(options: { fromRepo?: boolean }): Promise<void
   log.info(`Labels: ${Object.keys(labels).join(', ')}`);
   log.info(`Members: ${Object.keys(members).join(', ')}`);
   console.log();
-  log.info('下一步：到每個 repo 內執行 devflow link 來連結專案');
+  log.success('── 下一步 ──');
+  console.log();
+
+  if (detected) {
+    // 既有專案流程
+    log.info('【既有專案】請依序執行以下操作：');
+    console.log();
+    console.log('  1. 進入每個 repo 目錄，執行 devflow link 連結專案：');
+    for (const repo of Object.values(repos)) {
+      console.log(`     cd ${repo.name} && devflow link`);
+    }
+    console.log();
+    console.log('  2. 在每個 repo 建立 develop 分支（若尚未建立）：');
+    for (const repo of Object.values(repos)) {
+      console.log(`     cd ${repo.name} && git checkout -b develop && git push -u origin develop`);
+    }
+    console.log();
+    console.log('  3. 匯出設定檔分享給組員：');
+    console.log('     devflow export');
+    console.log();
+    console.log('  4. 組員收到設定檔後執行：');
+    console.log('     devflow import <config-file>');
+    console.log('     cd <repo> && devflow link');
+    console.log();
+    console.log('  5. 開始開發任務：');
+    console.log('     cd <repo> && devflow task');
+  } else {
+    // 全新專案流程
+    log.info('【全新專案】請依序執行以下操作：');
+    console.log();
+    console.log('  1. 若需要建置專案骨架，先產生 scaffold 設定：');
+    console.log('     devflow setup');
+    console.log('     然後在 Claude Code 中執行 /scaffold 來初始化專案結構');
+    console.log();
+    console.log('  2. 為每個 repo 建立 Git 倉庫並推送到 GitHub：');
+    console.log('     cd <repo> && git init && gh repo create');
+    console.log();
+    console.log('  3. 進入每個 repo 目錄，執行 devflow link 連結專案：');
+    for (const repo of Object.values(repos)) {
+      console.log(`     cd ${repo.name} && devflow link`);
+    }
+    console.log();
+    console.log('  4. 在每個 repo 建立 develop 分支：');
+    for (const repo of Object.values(repos)) {
+      console.log(`     cd ${repo.name} && git checkout -b develop && git push -u origin develop`);
+    }
+    console.log();
+    console.log('  5. 匯出設定檔分享給組員：');
+    console.log('     devflow export');
+    console.log();
+    console.log('  6. 組員收到設定檔後執行：');
+    console.log('     devflow import <config-file>');
+    console.log('     cd <repo> && devflow link');
+    console.log();
+    console.log('  7. 開始開發任務：');
+    console.log('     cd <repo> && devflow task');
+  }
+  console.log();
 }
 
 async function collectRepos(): Promise<Record<string, RepoEntry>> {
