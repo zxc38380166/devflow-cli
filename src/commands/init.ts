@@ -165,9 +165,12 @@ export async function initCommand(options: { fromRepo?: boolean }): Promise<void
     console.log('  1. 前往 https://trello.com/power-ups/admin');
     console.log('  2. 點選「New」建立 Power-Up（名稱隨意，如 devflow）');
     console.log('  3. 建立後點進 Power-Up → 左側「API Key」→ 複製 API Key');
-    console.log('  4. 同頁面點「Token」連結 → 授權後複製 Token');
     console.log();
     apiKey = await input({ message: 'Trello API Key:', validate: (v) => v.length > 0 || '必填' });
+    console.log();
+    console.log('  4. 回到同頁面，點擊 API Key 右側的「Token」超連結');
+    console.log('  5. 授權後複製頁面上顯示的 Token');
+    console.log();
     token = await input({ message: 'Trello Token:', validate: (v) => v.length > 0 || '必填' });
   }
 
