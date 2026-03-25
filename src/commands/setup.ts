@@ -1,4 +1,4 @@
-import { input, password, confirm, select, number } from '@inquirer/prompts';
+import { input, confirm, select, number } from '@inquirer/prompts';
 import { writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { log } from '../utils/logger.js';
@@ -104,11 +104,21 @@ export async function setupCommand(): Promise<void> {
   let boardName = name.toUpperCase();
 
   if (enableDevflow) {
+    console.log();
+    console.log('  Trello API 憑證取得方式：');
+    console.log('  1. 前往 https://trello.com/power-ups/admin');
+    console.log('  2. 點選「New」建立 Power-Up（名稱隨意，如 devflow）');
+    console.log('  3. 建立後點進 Power-Up → 左側「API Key」→ 複製 API Key');
+    console.log();
     trelloApiKey = await input({
       message: 'Trello API Key:',
       validate: (v) => v.length > 0 || '啟用 devflow 必須提供 Trello API Key',
     });
-    trelloToken = await password({
+    console.log();
+    console.log('  4. 回到同頁面，點擊 API Key 右側的「Token」超連結');
+    console.log('  5. 授權後複製頁面上顯示的 Token');
+    console.log();
+    trelloToken = await input({
       message: 'Trello Token:',
       validate: (v) => v.length > 0 || '啟用 devflow 必須提供 Trello Token',
     });
