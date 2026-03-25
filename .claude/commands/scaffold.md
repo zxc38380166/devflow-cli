@@ -327,6 +327,38 @@ Create the NestJS project in `<name>-be/`:
 
    **`eslint.config.mjs`** — Flat config with TypeScript + Prettier
 
+   **`Dockerfile`** — Multi-stage build for Zeabur deployment:
+   ```dockerfile
+   FROM node:22-alpine AS builder
+   WORKDIR /app
+   COPY package.json yarn.lock ./
+   RUN yarn install --frozen-lockfile
+   COPY . .
+   RUN yarn build
+
+   FROM node:22-alpine
+   WORKDIR /app
+   COPY --from=builder /app/dist ./dist
+   COPY --from=builder /app/node_modules ./node_modules
+   COPY --from=builder /app/package.json ./
+   EXPOSE 8080
+   CMD ["node", "dist/main.js"]
+   ```
+
+   **`.dockerignore`**:
+   ```
+   node_modules
+   dist
+   .git
+   .env.local
+   *.log
+   ```
+
+   **`zeabur.json`**:
+   ```json
+   { "build_type": "dockerfile" }
+   ```
+
 4. Run `yarn install` in BE directory
 
 ### Phase 3: Frontend EC (Nuxt 4)
@@ -371,6 +403,36 @@ Create the Nuxt 4 project in `<name>-ec/`:
    **`i18n/locales/en-US.json`** — Full English translations
 
    **`eslint.config.mjs`** — Nuxt ESLint wrapper
+
+   **`Dockerfile`** — Multi-stage build for Zeabur deployment:
+   ```dockerfile
+   FROM node:22-alpine AS builder
+   WORKDIR /app
+   COPY package.json yarn.lock ./
+   RUN yarn install --frozen-lockfile
+   COPY . .
+   RUN yarn build
+
+   FROM node:22-alpine
+   WORKDIR /app
+   COPY --from=builder /app/.output ./.output
+   EXPOSE 3000
+   CMD ["node", ".output/server/index.mjs"]
+   ```
+
+   **`.dockerignore`**:
+   ```
+   node_modules
+   .output
+   .nuxt
+   .git
+   *.log
+   ```
+
+   **`zeabur.json`**:
+   ```json
+   { "build_type": "dockerfile" }
+   ```
 
 ### Phase 4: Frontend IMS (Next.js 16)
 
@@ -427,6 +489,45 @@ Create the Next.js project in `<name>-ims/`:
    **`eslint.config.mjs`** — Next.js ESLint flat config
 
    **Dev script in package.json**: `"dev": "next dev --turbopack -p 3011"`
+
+   **`next.config.ts`** — Add `output: 'standalone'` for Docker deployment:
+   ```ts
+   const nextConfig = {
+     output: 'standalone',
+     // ... other config
+   };
+   ```
+
+   **`Dockerfile`** — Multi-stage build for Zeabur deployment (standalone mode):
+   ```dockerfile
+   FROM node:22-alpine AS builder
+   WORKDIR /app
+   COPY package.json yarn.lock ./
+   RUN yarn install --frozen-lockfile
+   COPY . .
+   RUN yarn build
+
+   FROM node:22-alpine
+   WORKDIR /app
+   COPY --from=builder /app/.next/standalone ./
+   COPY --from=builder /app/.next/static ./.next/static
+   COPY --from=builder /app/public ./public
+   EXPOSE 3000
+   CMD ["node", "server.js"]
+   ```
+
+   **`.dockerignore`**:
+   ```
+   node_modules
+   .next
+   .git
+   *.log
+   ```
+
+   **`zeabur.json`**:
+   ```json
+   { "build_type": "dockerfile" }
+   ```
 
 ### Phase 5: Workspace Scripts
 
