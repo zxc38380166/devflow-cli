@@ -367,13 +367,20 @@ Create the Nuxt 4 project in `<name>-ec/`:
 
 1. **Initialize**: `npx nuxi@latest init <name>-ec`
 
-2. **Install dependencies**:
+2. **Upgrade to Nuxt 4**: After initialization, ensure Nuxt 4 is installed:
+   ```bash
+   cd <name>-ec
+   yarn add nuxt@^4.0.0
+   cd ..
+   ```
+
+3. **Install dependencies**:
    ```bash
    yarn add @nuxt/ui @nuxt/eslint @nuxt/image @nuxtjs/i18n @pinia/nuxt pinia @vueuse/core @vueuse/nuxt @unhead/vue @vee-validate/nuxt @vee-validate/zod moment-timezone zod vue-router
    yarn add -D @iconify-json/lucide @playwright/test @vue/test-utils vitest sass happy-dom playwright-core
    ```
 
-3. **Create files**:
+4. **Create files**:
 
    **`nuxt.config.ts`** — With modules (ui, eslint, image, i18n, pinia, vueuse, @vee-validate/nuxt), runtimeConfig for apiBaseUrl, i18n config (zh-TW default, en-US), devServer port 3010
 
