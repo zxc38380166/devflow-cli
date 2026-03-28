@@ -1,5 +1,5 @@
-import { input, confirm, select, number } from '@inquirer/prompts';
-import { writeFileSync, existsSync } from 'node:fs';
+import { input, confirm } from '@inquirer/prompts';
+import { writeFileSync, existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { log } from '../utils/logger.js';
 
@@ -15,9 +15,101 @@ interface ScaffoldConfig {
   };
 }
 
+function displaySummary(config: ScaffoldConfig): void {
+  const { project, github, database, cloudflare, domains, devflow } = config;
+  console.log();
+  console.log('─'.repeat(50));
+  console.log();
+  console.log(`  專案名稱:     ${project.name}`);
+  console.log(`  專案描述:     ${project.description}`);
+  console.log(`  GitHub:       ${github.username}`);
+  console.log(`  Repos:        ${project.name}-ec, ${project.name}-ims, ${project.name}-be`);
+  console.log();
+  console.log(`  MySQL:        ${database.mysql.replace(/--password=\S+/, '--password=****')}`);
+  console.log(`  Redis:        ${database.redis.replace(/-a\s+\S+/, '-a ****')}`);
+  console.log();
+  if (cloudflare.apiToken) {
+    console.log(`  Cloudflare:   ${cloudflare.apiToken.slice(0, 8)}****`);
+  } else {
+    console.log(`  Cloudflare:   （跳過）`);
+  }
+  console.log(`  EC 網域:      ${domains.ec}`);
+  console.log(`  IMS 網域:     ${domains.ims}`);
+  console.log(`  BE 網域:      ${domains.be}`);
+  console.log();
+  console.log(`  Devflow:      ${devflow.enabled ? `啟用（Board: ${devflow.trello.boardName}）` : '未啟用'}`);
+  console.log();
+  console.log('─'.repeat(50));
+}
+
+function validateConfig(config: ScaffoldConfig): string[] {
+  const errors: string[] = [];
+  if (!config.project?.name) errors.push('project.name');
+  if (!config.database?.mysql) errors.push('database.mysql');
+  if (!config.database?.redis) errors.push('database.redis');
+  if (config.devflow?.enabled) {
+    if (!config.devflow.trello?.apiKey) errors.push('devflow.trello.apiKey');
+    if (!config.devflow.trello?.token) errors.push('devflow.trello.token');
+  }
+  return errors;
+}
+
 export async function setupCommand(): Promise<void> {
   log.info('Devflow Setup — 一鍵建置新專案');
   console.log();
+
+  // ── Check for existing scaffold.config.json ──
+  const configPath = join(process.cwd(), 'scaffold.config.json');
+  if (existsSync(configPath)) {
+    log.info('偵測到 scaffold.config.json，讀取現有配置...');
+    console.log();
+
+    const raw = readFileSync(configPath, 'utf-8');
+    const config: ScaffoldConfig = JSON.parse(raw);
+
+    const errors = validateConfig(config);
+    if (errors.length > 0) {
+      log.error('scaffold.config.json 驗證失敗，缺少必填欄位:');
+      errors.forEach((e) => console.log(`  - ${e}`));
+      console.log();
+      log.info('請補齊後重新執行 devflow setup');
+      return;
+    }
+
+    // Fill defaults
+    if (!config.project.description) config.project.description = `${config.project.name} Platform`;
+    if (!config.github?.username) {
+      try {
+        const { execSync } = await import('node:child_process');
+        config.github = { username: execSync('gh api user -q .login', { encoding: 'utf-8', stdio: 'pipe' }).trim() };
+      } catch {
+        config.github = { username: '' };
+      }
+    }
+    if (!config.domains?.ec) config.domains = { ...config.domains, ec: `${config.project.name}.com` };
+    if (!config.domains?.ims) config.domains.ims = `admin.${config.project.name}.com`;
+    if (!config.domains?.be) config.domains.be = `api.${config.project.name}.com`;
+    if (!config.cloudflare) config.cloudflare = { apiToken: '', accountId: '' };
+    if (!config.devflow) config.devflow = { enabled: false, trello: { apiKey: '', token: '', boardName: '' } };
+
+    displaySummary(config);
+
+    const ok = await confirm({ message: '使用此配置繼續？', default: true });
+    if (!ok) {
+      log.warn('已取消，請修改 scaffold.config.json 後重新執行');
+      return;
+    }
+
+    log.success(`已載入配置: ${configPath}`);
+    console.log();
+    log.info('下一步：在 Claude Code 中執行 /scaffold');
+    log.info('scaffold 會讀取 scaffold.config.json 自動完成所有建置');
+    if (config.devflow.enabled) {
+      log.info('包含：Repo 初始化 + Trello Board + 分支策略 + devflow 連結');
+    }
+    return;
+  }
+
   console.log('此指令會產生 scaffold.config.json，搭配 /scaffold 使用');
   console.log('包含：專案初始化 + Trello Board + 分支策略 + 開發流程');
   console.log();
@@ -142,29 +234,7 @@ export async function setupCommand(): Promise<void> {
   };
 
   // ── Display summary ──
-  console.log();
-  console.log('─'.repeat(50));
-  console.log();
-  console.log(`  專案名稱:     ${name}`);
-  console.log(`  專案描述:     ${description}`);
-  console.log(`  GitHub:       ${username}`);
-  console.log(`  Repos:        ${name}-ec, ${name}-ims, ${name}-be`);
-  console.log();
-  console.log(`  MySQL:        ${mysql.replace(/--password=\S+/, '--password=****')}`);
-  console.log(`  Redis:        ${redis.replace(/-a\s+\S+/, '-a ****')}`);
-  console.log();
-  if (cfToken) {
-    console.log(`  Cloudflare:   ${cfToken.slice(0, 8)}****`);
-  } else {
-    console.log(`  Cloudflare:   （跳過）`);
-  }
-  console.log(`  EC 網域:      ${ecDomain}`);
-  console.log(`  IMS 網域:     ${imsDomain}`);
-  console.log(`  BE 網域:      ${beDomain}`);
-  console.log();
-  console.log(`  Devflow:      ${enableDevflow ? `啟用（Board: ${boardName}）` : '未啟用'}`);
-  console.log();
-  console.log('─'.repeat(50));
+  displaySummary(config);
 
   const ok = await confirm({ message: '確認以上設定，產生 scaffold.config.json？', default: true });
   if (!ok) {
@@ -173,10 +243,10 @@ export async function setupCommand(): Promise<void> {
   }
 
   // ── Write config file ──
-  const configPath = join(process.cwd(), 'scaffold.config.json');
-  writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+  const outPath = join(process.cwd(), 'scaffold.config.json');
+  writeFileSync(outPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
 
-  log.success(`已產生: ${configPath}`);
+  log.success(`已產生: ${outPath}`);
   console.log();
   log.info('下一步：在 Claude Code 中執行 /scaffold');
   log.info('scaffold 會讀取 scaffold.config.json 自動完成所有建置');
