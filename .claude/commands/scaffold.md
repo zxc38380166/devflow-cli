@@ -628,16 +628,12 @@ Replace `zxc38380166` with the provided GitHub username in all scripts.
 
 This phase sets up the complete team development workflow (Trello board, branching strategy, PR flow).
 
-1. **Install devflow CLI** (if not already installed):
+1. **Install devflow CLI** as a workspace dev dependency:
    ```bash
-   # Check if devflow is available
-   if ! command -v devflow &> /dev/null; then
-     git clone https://github.com/zxc38380166/devflow-cli.git ~/.devflow-cli
-     cd ~/.devflow-cli && yarn install && yarn link
-     cd -
-   fi
+   cd <workspace>
+   yarn add -D github:zxc38380166/devflow-cli
    ```
-   devflow-cli is a standalone tool installed globally at `~/.devflow-cli`, NOT inside the project being scaffolded.
+   This installs `devflow` into `node_modules/.bin/`, available via `npx devflow` or `yarn devflow`.
 
 2. **Create Trello Board** via API:
    - Board name from `devflow.trello.boardName` (default: uppercase `<name>`)
@@ -680,13 +676,20 @@ This phase sets up the complete team development workflow (Trello board, branchi
    cd <name>-be && git checkout -b develop && git push -u origin develop && cd ..
    ```
 
-6. **Export devflow config** for team members:
+6. **Install Claude Code skills** from devflow-cli into the workspace:
+   ```bash
+   # Copy skills from node_modules to workspace .claude/skills/
+   cp -r <workspace>/node_modules/devflow-cli/.claude/skills/* <workspace>/.claude/skills/
+   ```
+   This enables `/devflow-task` in Claude Code. Add `.claude/skills/devflow-task/` to `.gitignore` or commit it — 建議 commit，這樣組員 clone 後不用額外操作。
+
+7. **Export devflow config** for team members:
    ```bash
    devflow export
    ```
    This creates `devflow-<name>.json` in workspace root for team onboarding.
 
-7. **Display onboarding instructions**:
+8. **Display onboarding instructions**:
    ```
    ## Devflow 開發流程已建置完成
 
@@ -694,10 +697,11 @@ This phase sets up the complete team development workflow (Trello board, branchi
    Config export: devflow-<name>.json
 
    ### 組員加入方式
-   1. 安裝 devflow CLI
-   2. devflow import devflow-<name>.json
-   3. 輸入個人 Trello 憑證
-   4. 開始使用 devflow task / devflow pr
+   1. git clone --recursive <workspace-repo>
+   2. yarn install（自動安裝 devflow-cli）
+   3. npx devflow import devflow-<name>.json
+   4. 輸入個人 Trello 憑證
+   5. 開始使用 npx devflow task / npx devflow pr / /devflow-task
    ```
 
 ### Phase 11: Verification
