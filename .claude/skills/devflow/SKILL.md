@@ -33,7 +33,7 @@ JSON 為陣列，每筆資料的 `action` 欄位決定操作類型：
 }
 ```
 
-### action: release:create（建立 release 分支）
+### action: release:create（建立 release 分支 + 發 PR → main）
 
 ```json
 {
@@ -43,7 +43,7 @@ JSON 為陣列，每筆資料的 `action` 欄位決定操作類型：
 }
 ```
 
-### action: release:finish（完成 release：PR → main、打 tag、同步 develop）
+### action: release:finish（自動 merge PR + 打 tag + 同步 develop）
 
 ```json
 {

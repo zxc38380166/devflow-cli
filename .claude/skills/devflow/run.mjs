@@ -151,6 +151,7 @@ async function handleTask(item) {
 }
 
 // ── Action: release:create ──
+// 建立 release 分支 + 發 PR → main
 
 async function handleReleaseCreate(item) {
   const repoDir = resolve(platformDir, item.repo);
@@ -172,10 +173,28 @@ async function handleReleaseCreate(item) {
   } catch (err) {
     console.error(`❌ Git 錯誤: ${err.message}`);
     try { git('stash pop', repoDir); } catch {}
+    return;
+  }
+
+  // 建立 PR → main
+  try {
+    console.log(`📝 建立 PR: ${branchName} → main`);
+    const prUrl = execSync(
+      `gh pr create --base main --head ${branchName} --title "Release ${ver}" --body "## Release ${ver}"`,
+      { cwd: repoDir, encoding: 'utf8', stdio: 'pipe' },
+    ).trim();
+    console.log(`✅ PR 已建立: ${prUrl}`);
+  } catch (err) {
+    if (err.message.includes('already exists')) {
+      console.log('ℹ️  PR 已存在');
+    } else {
+      console.error(`❌ PR 建立失敗: ${err.message}`);
+    }
   }
 }
 
 // ── Action: release:finish ──
+// 自動 merge PR + 打 tag + 同步 develop
 
 async function handleReleaseFinish(item) {
   const repoDir = resolve(platformDir, item.repo);
@@ -184,49 +203,39 @@ async function handleReleaseFinish(item) {
 
   console.log(`🏁 完成 release: ${branchName}`);
 
+  // 自動 merge PR
   try {
-    // 建立 PR → main
-    console.log(`📝 建立 PR: ${branchName} → main`);
-    const prUrl = execSync(
-      `gh pr create --base main --head ${branchName} --title "Release ${ver}" --body "## Release ${ver}"`,
+    console.log(`📝 Merge PR: ${branchName} → main`);
+    execSync(
+      `gh pr merge ${branchName} --merge --delete-branch`,
       { cwd: repoDir, encoding: 'utf8', stdio: 'pipe' },
-    ).trim();
-    console.log(`✅ PR 已建立: ${prUrl}`);
-
-    // 提示：PR 需要先 merge 才能繼續打 tag
-    console.log(`⚠️  請先到 GitHub merge PR，然後重新執行 release:finish（含 "merged": true）`);
+    );
+    console.log('✅ PR 已 merge，release 分支已刪除');
   } catch (err) {
-    // PR 可能已存在
-    if (err.message.includes('already exists')) {
-      console.log('ℹ️  PR 已存在');
-    } else {
-      console.error(`❌ PR 建立失敗: ${err.message}`);
-      return;
-    }
+    console.error(`❌ Merge 失敗: ${err.message}`);
+    return;
   }
 
-  // 如果標記已 merge，執行 tag + 同步
-  if (item.merged) {
-    try {
-      const stashed = stashIfNeeded(repoDir);
-      git('checkout main', repoDir);
-      git('pull', repoDir);
-      git(`tag ${ver}`, repoDir);
-      git(`push origin ${ver}`, repoDir);
-      console.log(`✅ Tag ${ver} 已建立並推送`);
+  // 打 tag + 同步 develop
+  try {
+    const stashed = stashIfNeeded(repoDir);
+    git('checkout main', repoDir);
+    git('pull', repoDir);
+    git(`tag ${ver}`, repoDir);
+    git(`push origin ${ver}`, repoDir);
+    console.log(`✅ Tag ${ver} 已建立並推送`);
 
-      git('checkout develop', repoDir);
-      git('pull', repoDir);
-      git('merge main', repoDir);
-      git('push origin develop', repoDir);
-      console.log('✅ develop 已同步 main 的變更');
+    git('checkout develop', repoDir);
+    git('pull', repoDir);
+    git('merge main', repoDir);
+    git('push origin develop', repoDir);
+    console.log('✅ develop 已同步 main 的變更');
 
-      console.log(`✅ Release ${ver} 完成！`);
-      stashPopIfNeeded(repoDir, stashed);
-    } catch (err) {
-      console.error(`❌ Git 錯誤: ${err.message}`);
-      try { git('stash pop', repoDir); } catch {}
-    }
+    console.log(`✅ Release ${ver} 完成！`);
+    stashPopIfNeeded(repoDir, stashed);
+  } catch (err) {
+    console.error(`❌ Git 錯誤: ${err.message}`);
+    try { git('stash pop', repoDir); } catch {}
   }
 }
 
