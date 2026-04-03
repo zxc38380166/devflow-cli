@@ -361,13 +361,13 @@ npx devflow task
 
 ### `/devflow` — 自動化操作（Claude Code skill）
 
-在 Claude Code 中使用，透過 `devflow.json` 批次執行多種操作。
+在 Claude Code 中使用，透過 `devflow.jsonc` 批次執行多種操作。
 
 **支援的 action**：`task`、`release:create`、`release:finish`、`pr`
 
 **使用方式**：
 
-1. 編輯工作區根目錄的 `devflow.json`：
+1. 編輯工作區根目錄的 `devflow.jsonc`：
 
 ```json
 [
@@ -475,7 +475,7 @@ devflow use another-project
 | 指令 | 用途 | 誰用 |
 |------|------|------|
 | `npx devflow task` | 建立 Trello 卡片 + Git 分支（互動式） | 所有人 |
-| `/devflow` | 讀取 devflow.json 批次執行操作（Claude Code skill） | 所有人 |
+| `/devflow` | 讀取 devflow.jsonc 批次執行操作（Claude Code skill） | 所有人 |
 | `npx devflow pr` | 建立 PR + 同步 Trello | 所有人 |
 | `npx devflow release:create <ver>` | 建立 release 分支 | 負責人 |
 | `npx devflow release:finish <ver>` | 完成 release | 負責人 |
@@ -601,7 +601,7 @@ devflow setup          # 1. 互動式收集所有參數，產生 scaffold.config
 
 ### Q: `/devflow` 和 `npx devflow task` 有什麼差別？
 - **`npx devflow task`** — 終端互動式，一次建一張卡
-- **`/devflow`** — Claude Code skill，用 `devflow.json` 批次執行操作（task、release、pr）
+- **`/devflow`** — Claude Code skill，用 `devflow.jsonc` 批次執行操作（task、release、pr）
 
 ### Q: scaffold.config.json 裡的密碼會被 commit 嗎？
 不會。`.gitignore` 已包含 `.env`，但 `scaffold.config.json` 本身沒被 ignore。建議用完後刪除，或加入 `.gitignore`。

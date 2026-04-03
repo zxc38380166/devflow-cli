@@ -18,7 +18,7 @@ const MEMBERS = projectConfig.board.members;
 const REPOS = projectConfig.repos;
 
 // Read tasks JSONC (path passed as argv[2] or default)
-const tasksPath = process.argv[2] || resolve(process.cwd(), 'devflow.json');
+const tasksPath = process.argv[2] || resolve(process.cwd(), 'devflow.jsonc');
 const rawJson = readFileSync(tasksPath, 'utf8')
   .replace(/\/\/.*$/gm, '')       // strip single-line comments
   .replace(/\/\*[\s\S]*?\*\//g, '') // strip block comments

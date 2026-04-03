@@ -1,19 +1,19 @@
 ---
 name: devflow
-description: 讀取 devflow.json 自動執行 devflow 操作（建卡片、建 release、建 PR 等）。當使用者說「devflow」、「devflow task」、「devflow release」、「devflow pr」、「建卡片」、「建 task」時觸發。
+description: 讀取 devflow.jsonc 自動執行 devflow 操作（建卡片、建 release、建 PR 等）。當使用者說「devflow」、「devflow task」、「devflow release」、「devflow pr」、「建卡片」、「建 task」時觸發。
 disable-model-invocation: true
 ---
 
 ## 流程
 
-1. 讀取工作目錄下的 `devflow.json`
+1. 讀取工作目錄下的 `devflow.jsonc`
 2. 確認 devflow active project 是否正確（讀取 `~/.devflow/config.json` 的 `activeProject`），若不對先執行 `devflow use <project>`
 3. 執行 `node ${CLAUDE_SKILL_DIR}/run.mjs` 完成以下動作：
    - 根據每筆資料的 `action` 欄位決定操作類型
    - 支援 `task`、`release:create`、`release:finish`、`pr` 四種操作
 4. 完成後輸出每個操作的結果
 
-## devflow.json 格式
+## devflow.jsonc 格式
 
 JSON 為陣列，每筆資料的 `action` 欄位決定操作類型：
 
@@ -74,7 +74,7 @@ JSON 為陣列，每筆資料的 `action` 欄位決定操作類型：
 
 ## 注意事項
 
-- 如果 `devflow.json` 不存在或為空，先詢問使用者要做什麼操作，幫他生成 JSON 後再執行
+- 如果 `devflow.jsonc` 不存在或為空，先詢問使用者要做什麼操作，幫他生成 JSON 後再執行
 - 描述要寫給 PM 看的，不要寫程式碼細節
 - 分支名保持簡短（slug 最多 15 字元）
 - labels 和 members 的可選值來自 `~/.devflow/projects/<activeProject>/config.json`
