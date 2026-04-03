@@ -2,6 +2,7 @@ import { confirm } from '@inquirer/prompts';
 import { resolveConfig } from '../utils/config.js';
 import { createPR } from '../services/github.js';
 import * as git from '../services/git.js';
+import { getListCards, moveCard } from '../services/trello.js';
 import { log } from '../utils/logger.js';
 
 export async function releaseFinishCommand(version: string): Promise<void> {
@@ -67,6 +68,25 @@ export async function releaseFinishCommand(version: string): Promise<void> {
     log.success('develop 已同步 main 的變更');
 
     log.success(`Release ${ver} 完成！`);
+
+    // 將本 repo 在 In Review 的 Trello 卡片移到 Done
+    const repoRole = config.currentRepo?.repoRole;
+    const inReviewListId = config.board.lists.inReview;
+    const doneListId = config.board.lists.done;
+    if (repoRole && inReviewListId && doneListId) {
+      try {
+        const cards = await getListCards(config, inReviewListId);
+        for (const card of cards) {
+          const match = card.name.match(/^\[([^\]]+)\]/);
+          if (match && match[1] === repoRole) {
+            await moveCard(config, card.id, doneListId);
+            log.success(`Trello 卡片已移到 Done: ${card.name}`);
+          }
+        }
+      } catch (err) {
+        log.warn(`Trello 移卡失敗: ${err instanceof Error ? err.message : err}`);
+      }
+    }
   } catch (err) {
     log.error(`失敗: ${err instanceof Error ? err.message : err}`);
   }

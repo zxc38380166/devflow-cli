@@ -56,6 +56,15 @@ export async function getCardByShortLink(config: ResolvedConfig, shortLink: stri
   return res.json() as Promise<TrelloCard>;
 }
 
+export async function getListCards(
+  config: ResolvedConfig,
+  listId: string,
+): Promise<Array<{ id: string; name: string }>> {
+  const res = await fetch(`${BASE}/lists/${listId}/cards?${auth(config)}&fields=id,name`);
+  if (!res.ok) throw new Error(`Trello getListCards failed: ${res.status}`);
+  return res.json() as Promise<Array<{ id: string; name: string }>>;
+}
+
 // ── Board operations (use raw credentials, for init) ──
 
 export async function getBoardLists(apiKey: string, token: string, boardId: string) {
