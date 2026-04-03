@@ -1,0 +1,11 @@
+import type { GlobalConfig, ProjectConfig, RepoLocalConfig, ResolvedConfig } from '../types/index.js';
+export declare function getConfigBase(): string;
+export declare function loadGlobalConfig(): GlobalConfig | null;
+export declare function saveGlobalConfig(config: GlobalConfig): void;
+export declare function loadProjectConfig(name: string): ProjectConfig | null;
+export declare function saveProjectConfig(name: string, config: ProjectConfig): void;
+export declare function listProjects(): string[];
+export declare function getActiveProject(): string | null;
+export declare function setActiveProject(name: string): void;
+export declare function loadRepoLocalConfig(cwd?: string): RepoLocalConfig | null;
+export declare function resolveConfig(): ResolvedConfig;

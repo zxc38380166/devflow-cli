@@ -13,8 +13,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "dev": "tsc --watch",
-    "prepare": "tsc"
+    "dev": "tsc --watch"
   },
   "dependencies": {
     "chalk": "^5.4.0",

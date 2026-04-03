@@ -1,0 +1,12 @@
+export declare function getGitRoot(cwd?: string): string;
+export declare function getCurrentBranch(cwd?: string): string;
+export declare function branchExists(name: string, cwd?: string): boolean;
+export declare function remoteBranchExists(name: string, cwd?: string): boolean;
+export declare function fetch(cwd?: string): void;
+export declare function checkout(branch: string, create?: boolean, cwd?: string): void;
+export declare function pull(cwd?: string): void;
+export declare function pushBranch(branch: string, cwd?: string): void;
+export declare function createTag(tag: string, cwd?: string): void;
+export declare function pushTag(tag: string, cwd?: string): void;
+export declare function ensureDevelop(cwd?: string): void;
+export declare function merge(branch: string, cwd?: string): void;
