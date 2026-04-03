@@ -7,34 +7,32 @@ Team dev workflow CLI — Trello + Git + GitHub + Scaffold 自動化串接。
 ## 安裝
 
 ```bash
-git clone git@github.com:zxc38380166/devflow-cli.git
-cd devflow-cli
-yarn install
-yarn link
+# 在專案根目錄（workspace 或單一 repo 皆可）
+yarn add -D github:zxc38380166/devflow-cli
 ```
 
-安裝完成後，任何目錄都可使用 `devflow` 指令。
+安裝後透過 `npx devflow` 執行指令。
 
 ## 指令總覽
 
 ```
-devflow setup                 一鍵建置新專案（產生 scaffold.config.json）
-devflow init                  初始化開發流程（Trello + Board + Repos）
-devflow link                  將目前 repo 連結到專案
-devflow export                匯出專案設定（不含憑證）
-devflow import <file>         匯入專案設定檔
-devflow use <project>         切換專案
-devflow task                  建立 Trello 卡片 + Git 分支
-devflow pr                    建立 PR + 同步 Trello
-devflow release:create <ver>  建立 release 分支
-devflow release:finish <ver>  完成 release（tag + 同步）
+npx devflow setup                 一鍵建置新專案（產生 scaffold.config.json）
+npx devflow init                  初始化開發流程（Trello + Board + Repos）
+npx devflow link                  將目前 repo 連結到專案
+npx devflow export                匯出專案設定（不含憑證）
+npx devflow import <file>         匯入專案設定檔
+npx devflow use <project>         切換專案
+npx devflow task                  建立 Trello 卡片 + Git 分支
+npx devflow pr                    建立 PR + 同步 Trello
+npx devflow release:create <ver>  建立 release 分支
+npx devflow release:finish <ver>  完成 release（tag + 同步）
 ```
 
 ## 一鍵開箱（搭配 /scaffold）
 
 ```bash
 # 1. 在新專案目錄執行
-devflow setup              # 互動式收集參數 → 產生 scaffold.config.json
+npx devflow setup          # 互動式收集參數 → 產生 scaffold.config.json
 
 # 2. 在 Claude Code 中執行
 /scaffold                  # 讀取 config → 自動建置 Repos + 框架 + Trello + 分支策略
@@ -237,7 +235,16 @@ main ─────────────────────────
 ## 組員加入
 
 ```bash
-devflow import devflow-xxx.json    # 匯入管理員提供的設定檔
+# 情境 A：有 workspace 權限
+git clone --recursive git@github.com:org/xx-platform.git
+cd xx-platform && yarn install
+npx devflow import devflow-xxx.json
+
+# 情境 B：只有單一 repo 權限
+git clone git@github.com:org/xx-ec.git
+cd xx-ec && yarn add -D github:zxc38380166/devflow-cli
+npx devflow import devflow-xxx.json
+npx devflow link
 ```
 
 ## 文件

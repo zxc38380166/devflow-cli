@@ -8,8 +8,8 @@
 ## 目錄
 
 1. [一鍵開箱：新專案完整建置](#一一鍵開箱新專案完整建置)
-2. [單獨使用：只建置開發流程](#二單獨使用只建置開發流程)
-3. [組員加入專案](#三組員加入專案)
+2. [既有專案整合 devflow](#二既有專案整合-devflow)
+3. [組員加入專案（三種情境）](#三組員加入專案三種情境)
 4. [日常開發指令](#四日常開發指令)
 5. [Release 流程](#五release-流程)
 6. [多專案管理](#六多專案管理)
@@ -131,113 +131,202 @@ Phase 10（devflow 整合）自動完成：
 
 ---
 
-## 二、單獨使用：只建置開發流程
+## 二、既有專案整合 devflow
 
-> 已有專案，只需要加入 Trello + 分支策略 + PR 流程。
+> 已有專案（不論是 workspace 多 repo 或單一 repo），想加入 Trello + 分支策略 + PR 流程。
+> 此段落為**管理員**操作，組員請看[第三節](#三組員加入專案三種情境)。
 
-### 安裝 devflow
+### Step 1：安裝 devflow
 
 ```bash
-# 在 workspace 根目錄
+# 在專案根目錄（workspace 或單一 repo 皆可）
 yarn add -D github:zxc38380166/devflow-cli
 ```
 
 安裝後可透過 `npx devflow` 或 `yarn devflow` 執行。
 
-### 初始化
+### Step 2：初始化
 
 ```bash
-devflow init
+npx devflow init
 ```
 
-互動流程：
+devflow 會自動偵測專案結構：
+
+- **Workspace（含 `.gitmodules` 或多個子目錄）**→ 自動識別所有 repo 及角色
+- **單一 repo** → 自動偵測目錄名稱推斷角色
 
 ```
-? 專案名稱: my-project
-? Repo 名稱: my-app-web
-? my-app-web 的角色: frontend
-? 還要新增其他 repo 嗎？ Yes
-? Repo 名稱: my-app-api
-? my-app-api 的角色: backend
-? 還要新增其他 repo 嗎？ No
+✔ 偵測到既有專案: myshop
+ℹ Repos:
+    WT-ec (frontend)
+    WT-be (backend)
 
+? 使用偵測到的設定？ Yes
 ? Trello API Key: xxxxxxxx
 ? Trello Token: ********
+? Trello Board: 建立新的 Board
+? Board 名稱: MYSHOP
 
-? Trello Board: 建立新的 Board（自動建立 Lists 和 Labels）
-? Board 名稱: MY-PROJECT
-
-✔ 專案 "my-project" 初始化完成！
-ℹ 下一步：到每個 repo 內執行 devflow link 來連結專案
+✔ 專案 "myshop" 初始化完成！
 ```
 
-### 連結 repo
+### Step 3：連結每個 repo
 
 ```bash
-cd ~/projects/my-app-web
-devflow link
+cd WT-ec && npx devflow link
+cd ../WT-be && npx devflow link
 ```
 
-### 匯出給組員
+每個 repo 會產生 `.devflow.json`，**請 commit 進版控**，這樣組員 clone 後自動連結。
+
+### Step 4：匯出設定檔給組員
 
 ```bash
-devflow export
+npx devflow export
 ```
+
+產生 `devflow-myshop.json`（不含 Trello 憑證，可安全分享）。
+
+把以下東西給組員：
+- `devflow-myshop.json`
+- Trello API Key（團隊共用）
+
+### Step 5：安裝 Claude Code Skill（選配）
+
+如果團隊有使用 Claude Code，可安裝 `/devflow-task` skill：
+
+```bash
+cp -r node_modules/devflow-cli/.claude/skills/devflow-task .claude/skills/
+```
+
+這樣組員就能透過 JSON 批次建立 Trello 卡片 + Git 分支。
 
 ---
 
-## 三、組員加入專案
+## 三、組員加入專案（三種情境）
 
-### 前置需求
+### 前置需求（三種情境共通）
 
 - Node.js >= 18
 - Git
 - GitHub CLI (`gh`) — `brew install gh && gh auth login`
 - Trello 帳號
 
-### Step 1：安裝 devflow
+### 取得 Trello Token（三種情境共通）
 
-```bash
-# clone workspace 後
-yarn install
-```
-
-devflow-cli 已包含在 `devDependencies`，`yarn install` 會自動安裝。
-
-### Step 2：取得 Trello Token
-
-1. 向管理員取得 **API Key**
-2. 瀏覽器打開（替換 API Key）：
+1. 向管理員取得 **API Key**（團隊共用）
+2. 瀏覽器打開以下網址（把 `你的API_KEY` 替換成實際的 Key）：
    ```
    https://trello.com/1/authorize?expiration=never&scope=read,write&response_type=token&key=你的API_KEY
    ```
-3. 點擊「允許」→ 複製 Token
+3. 點擊「允許」→ 複製畫面上的 Token
 
-### Step 3：匯入設定
+---
+
+### 情境 A：有 Workspace 權限（如 xx-platform，含所有子 repo）
+
+> 適用：管理員給了你整個 workspace 的存取權限，你可以 clone 整個專案。
 
 ```bash
+# 1. Clone workspace（含所有子 repo）
+git clone --recursive git@github.com:org/myshop-platform.git
+cd myshop-platform
+
+# 2. 安裝依賴（devflow-cli 已在 devDependencies）
+yarn install
+
+# 3. 匯入管理員提供的設定檔
 npx devflow import devflow-myshop.json
+# → 輸入 Trello API Key 和 Token
+
+# 4. 完成！
 ```
 
-```
-✔ 專案 "myshop" 已匯入
-? Trello API Key: xxxxxxxx
-? Trello Token: ********
-✔ Trello 憑證已儲存
-✔ 目前專案已切換為: myshop
-```
+> `.devflow.json` 已在每個 repo 內（管理員已 commit），**不需要再 `devflow link`**。
+> 直接開始用 `npx devflow task` 或 `/devflow-task`。
 
-### Step 4：連結 repo
+---
 
-如果 repo 已有 `.devflow.json`（管理員已 commit），**跳過此步**。
-如果沒有：
+### 情境 B：只有單一 Repo 權限（如只拿到 xx-ec）
+
+> 適用：你只被授權存取其中一個 repo，沒有 workspace 權限。
 
 ```bash
-cd ~/projects/myshop-ec
-devflow link
+# 1. Clone 單一 repo
+git clone git@github.com:org/myshop-ec.git
+cd myshop-ec
+
+# 2. 安裝 devflow（如果 repo 的 devDependencies 已有則跳過此步）
+yarn add -D github:zxc38380166/devflow-cli
+yarn install
+
+# 3. 匯入管理員提供的設定檔
+npx devflow import devflow-myshop.json
+# → 輸入 Trello API Key 和 Token
+
+# 4. 連結 repo（如果 .devflow.json 已存在則跳過此步）
+npx devflow link
+# → 選擇此 repo 的角色（如 frontend）
+
+# 5. 完成！
 ```
 
-**完成！** 可以開始使用 `devflow task` 和 `devflow pr`。
+> 就算只有一個 repo，devflow 的所有功能（task、pr、release）都能正常使用。
+
+---
+
+### 情境 C：全新環境，從零建置
+
+> 適用：你是管理員，要建一個全新的專案，從頭設定所有東西。
+
+```bash
+# 1. 建立工作區
+mkdir myshop-platform && cd myshop-platform
+git init
+yarn init -y
+
+# 2. 安裝 devflow
+yarn add -D github:zxc38380166/devflow-cli
+
+# 3. 選擇建置方式：
+```
+
+**方式一：一鍵建置（搭配 scaffold）**
+
+適合需要完整專案骨架（NestJS + Nuxt + GitHub Repos + Cloudflare）的情況：
+
+```bash
+npx devflow setup    # 互動式收集參數，產生 scaffold.config.json
+# 然後在 Claude Code 執行 /scaffold
+```
+
+> 詳見[第一節](#一一鍵開箱新專案完整建置)。
+
+**方式二：只要開發流程**
+
+已有 repo，只想加上 Trello + 分支策略：
+
+```bash
+npx devflow init     # 互動式設定專案 + Trello
+npx devflow link     # 在每個 repo 內執行
+npx devflow export   # 匯出設定檔給組員
+```
+
+> 詳見[第二節](#二既有專案整合-devflow)。
+
+---
+
+### 情境對照表
+
+| | 情境 A（有 workspace） | 情境 B（只有單一 repo） | 情境 C（全新建置） |
+|---|---|---|---|
+| **誰** | 組員 | 組員 | 管理員 |
+| **Clone** | `--recursive` 整個 workspace | 單一 repo | 自己建 |
+| **安裝** | `yarn install` | `yarn add -D` + `yarn install` | `yarn add -D` |
+| **匯入設定** | `devflow import` | `devflow import` | `devflow init` 或 `devflow setup` |
+| **Link** | 不需要（已有 `.devflow.json`） | `devflow link`（若沒 `.devflow.json`） | `devflow link` |
+| **匯出** | — | — | `devflow export`（給組員） |
 
 ---
 
@@ -522,7 +611,7 @@ devflow setup          # 1. 互動式收集所有參數，產生 scaffold.config
 - **`devflow init`** — 只建置開發流程（Trello + 分支策略），適合已有 repo 的情況
 
 ### Q: 我只 clone 了一個 repo，可以用 devflow 嗎？
-**可以。** devflow 設定存在 `~/.devflow/`，跟 repo 無關。只要 `yarn install` 安裝過即可。
+**可以。** 這就是[情境 B](#情境-b只有單一-repo-權限如只拿到-xx-ec)。devflow 設定存在 `~/.devflow/`，跟 repo 數量無關。安裝後匯入設定、link 就能使用全部功能。
 
 ### Q: `/devflow-task` 和 `npx devflow task` 有什麼差別？
 - **`npx devflow task`** — 終端互動式，一次建一張卡
@@ -538,11 +627,11 @@ devflow setup          # 1. 互動式收集所有參數，產生 scaffold.config
 可以。設定 `devflow.enabled: false`（或 setup 互動時選「否」），scaffold 會跳過 Phase 10。
 
 ### Q: 新組員怎麼最快上手？
-1. `git clone --recursive <workspace>`
-2. `yarn install`（自動安裝 devflow-cli）
-3. 管理員給 `devflow-xxx.json`
-4. `npx devflow import devflow-xxx.json`
-5. 開始用 `npx devflow task` 或 `/devflow-task`
+看你拿到什麼權限：
+- **有 workspace 權限**（情境 A）：`git clone --recursive` → `yarn install` → `npx devflow import` → 開始開發
+- **只有單一 repo**（情境 B）：`git clone` → `yarn add -D` → `npx devflow import` → `npx devflow link` → 開始開發
+
+詳見[第三節](#三組員加入專案三種情境)。
 
 ### Q: develop 分支不存在？
 `devflow task` 會自動從 main 建立並推送。
