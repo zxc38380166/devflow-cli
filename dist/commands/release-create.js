@@ -2,7 +2,7 @@ import { confirm } from '@inquirer/prompts';
 import { resolveConfig } from '../utils/config.js';
 import * as git from '../services/git.js';
 import { log } from '../utils/logger.js';
-export async function releaseCreateCommand(version, options) {
+export async function releaseCreateCommand(version) {
     const config = resolveConfig();
     if (!/^v?\d+\.\d+\.\d+$/.test(version)) {
         log.error('版號格式錯誤，須為 vX.Y.Z 或 X.Y.Z');
@@ -14,15 +14,13 @@ export async function releaseCreateCommand(version, options) {
     if (config.currentRepo)
         log.info(`Repo: ${config.currentRepo.repoRole}`);
     log.info(`Release 分支: ${branchName}`);
-    if (!options.yes) {
-        const ok = await confirm({
-            message: `將從 develop 建立 ${branchName}，確認？`,
-            default: true,
-        });
-        if (!ok) {
-            log.warn('已取消');
-            return;
-        }
+    const ok = await confirm({
+        message: `將從 develop 建立 ${branchName}，確認？`,
+        default: true,
+    });
+    if (!ok) {
+        log.warn('已取消');
+        return;
     }
     try {
         git.fetch();

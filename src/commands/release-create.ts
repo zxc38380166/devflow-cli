@@ -3,7 +3,7 @@ import { resolveConfig } from '../utils/config.js';
 import * as git from '../services/git.js';
 import { log } from '../utils/logger.js';
 
-export async function releaseCreateCommand(version: string, options: { yes?: boolean }): Promise<void> {
+export async function releaseCreateCommand(version: string): Promise<void> {
   const config = resolveConfig();
 
   if (!/^v?\d+\.\d+\.\d+$/.test(version)) {
@@ -18,16 +18,14 @@ export async function releaseCreateCommand(version: string, options: { yes?: boo
   if (config.currentRepo) log.info(`Repo: ${config.currentRepo.repoRole}`);
   log.info(`Release 分支: ${branchName}`);
 
-  if (!options.yes) {
-    const ok = await confirm({
-      message: `將從 develop 建立 ${branchName}，確認？`,
-      default: true,
-    });
+  const ok = await confirm({
+    message: `將從 develop 建立 ${branchName}，確認？`,
+    default: true,
+  });
 
-    if (!ok) {
-      log.warn('已取消');
-      return;
-    }
+  if (!ok) {
+    log.warn('已取消');
+    return;
   }
 
   try {
