@@ -56,6 +56,16 @@ export async function getCardByShortLink(config: ResolvedConfig, shortLink: stri
   return res.json() as Promise<TrelloCard>;
 }
 
+export async function getCardByIdShort(config: ResolvedConfig, idShort: number): Promise<TrelloCard> {
+  const boardId = config.board.boardId;
+  const res = await fetch(`${BASE}/boards/${boardId}/cards?${auth(config)}&fields=id,idShort,shortLink,shortUrl,name,desc`);
+  if (!res.ok) throw new Error(`Trello getBoardCards failed: ${res.status}`);
+  const cards = (await res.json()) as TrelloCard[];
+  const card = cards.find((c) => c.idShort === idShort);
+  if (!card) throw new Error(`Card #${idShort} not found on board`);
+  return card;
+}
+
 export async function getListCards(
   config: ResolvedConfig,
   listId: string,

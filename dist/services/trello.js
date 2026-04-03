@@ -40,6 +40,23 @@ export async function getCardByShortLink(config, shortLink) {
         throw new Error(`Trello getCard failed: ${res.status}`);
     return res.json();
 }
+export async function getCardByIdShort(config, idShort) {
+    const boardId = config.board.boardId;
+    const res = await fetch(`${BASE}/boards/${boardId}/cards?${auth(config)}&fields=id,idShort,shortLink,shortUrl,name,desc`);
+    if (!res.ok)
+        throw new Error(`Trello getBoardCards failed: ${res.status}`);
+    const cards = (await res.json());
+    const card = cards.find((c) => c.idShort === idShort);
+    if (!card)
+        throw new Error(`Card #${idShort} not found on board`);
+    return card;
+}
+export async function getListCards(config, listId) {
+    const res = await fetch(`${BASE}/lists/${listId}/cards?${auth(config)}&fields=id,name`);
+    if (!res.ok)
+        throw new Error(`Trello getListCards failed: ${res.status}`);
+    return res.json();
+}
 // ── Board operations (use raw credentials, for init) ──
 export async function getBoardLists(apiKey, token, boardId) {
     const res = await fetch(`${BASE}/boards/${boardId}/lists?${authQuery(apiKey, token)}`);

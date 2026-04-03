@@ -1,6 +1,6 @@
 import { input, confirm } from '@inquirer/prompts';
 import { resolveConfig } from '../utils/config.js';
-import { getCardByShortLink, moveCard, addComment } from '../services/trello.js';
+import { getCardByIdShort, moveCard, addComment } from '../services/trello.js';
 import { createPR } from '../services/github.js';
 import * as git from '../services/git.js';
 import { parseCardIdFromBranch, getBaseBranch } from '../utils/branch.js';
@@ -13,26 +13,28 @@ export async function prCommand(): Promise<void> {
   const branch = git.getCurrentBranch();
   log.info(`目前分支: ${branch}`);
 
-  const shortLink = parseCardIdFromBranch(branch);
-  if (!shortLink) {
-    log.error(`無法從分支名 "${branch}" 解析 Card ID，分支名需符合 feature/CARD-ID-xxx 格式`);
+  const idShort = parseCardIdFromBranch(branch);
+  if (!idShort) {
+    log.error(`無法從分支名 "${branch}" 解析 Card ID，分支名需符合 feat/ID-xxx 格式`);
     process.exit(1);
   }
 
-  log.info(`正在查詢 Trello 卡片 ${shortLink}...`);
+  log.info(`正在查詢 Trello 卡片 #${idShort}...`);
   let card;
   try {
-    card = await getCardByShortLink(config, shortLink);
+    card = await getCardByIdShort(config, Number(idShort));
   } catch {
-    log.error(`找不到 Trello 卡片: ${shortLink}`);
+    log.error(`找不到 Trello 卡片: #${idShort}`);
     process.exit(1);
   }
 
   log.info(`卡片: ${card.name}`);
   log.info(`連結: ${card.shortUrl}`);
 
-  const typeMatch = branch.match(/^(feature|chore|hotfix)\//);
-  const type = (typeMatch ? typeMatch[1] : 'feature') as TaskType;
+  const typeMatch = branch.match(/^(feat|chore|fix|feature|hotfix)\//);
+  const typeMap: Record<string, TaskType> = { feat: 'feature', fix: 'hotfix' };
+  const rawType = typeMatch ? typeMatch[1] : 'feature';
+  const type = (typeMap[rawType] || rawType) as TaskType;
   const baseBranch = getBaseBranch(type);
 
   const prTitle = await input({

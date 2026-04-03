@@ -10,6 +10,11 @@ export declare function createCard(config: ResolvedConfig, params: {
 export declare function moveCard(config: ResolvedConfig, cardId: string, listId: string): Promise<void>;
 export declare function addComment(config: ResolvedConfig, cardId: string, text: string): Promise<void>;
 export declare function getCardByShortLink(config: ResolvedConfig, shortLink: string): Promise<TrelloCard>;
+export declare function getCardByIdShort(config: ResolvedConfig, idShort: number): Promise<TrelloCard>;
+export declare function getListCards(config: ResolvedConfig, listId: string): Promise<Array<{
+    id: string;
+    name: string;
+}>>;
 export declare function getBoardLists(apiKey: string, token: string, boardId: string): Promise<{
     id: string;
     name: string;

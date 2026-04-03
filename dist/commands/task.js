@@ -85,7 +85,7 @@ export async function taskCommand() {
     });
     if (createBranch) {
         const baseBranch = getBaseBranch(type);
-        const branchName = buildBranchName(type, card.shortLink, title);
+        const branchName = buildBranchName(type, String(card.idShort), title);
         log.info(`Base branch: ${baseBranch}`);
         log.info(`新分支: ${branchName}`);
         try {
