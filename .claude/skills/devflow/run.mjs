@@ -17,9 +17,13 @@ const LABELS = projectConfig.board.labels;
 const MEMBERS = projectConfig.board.members;
 const REPOS = projectConfig.repos;
 
-// Read tasks JSON (path passed as argv[2] or default)
+// Read tasks JSONC (path passed as argv[2] or default)
 const tasksPath = process.argv[2] || resolve(process.cwd(), 'devflow.json');
-const items = JSON.parse(readFileSync(tasksPath, 'utf8'));
+const rawJson = readFileSync(tasksPath, 'utf8')
+  .replace(/\/\/.*$/gm, '')       // strip single-line comments
+  .replace(/\/\*[\s\S]*?\*\//g, '') // strip block comments
+  .replace(/,\s*([\]}])/g, '$1');   // strip trailing commas
+const items = JSON.parse(rawJson);
 
 const platformDir = process.cwd();
 
