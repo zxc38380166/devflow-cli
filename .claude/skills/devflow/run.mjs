@@ -18,7 +18,7 @@ const MEMBERS = projectConfig.board.members;
 const REPOS = projectConfig.repos;
 
 // Read tasks JSON (path passed as argv[2] or default)
-const tasksPath = process.argv[2] || resolve(process.cwd(), 'devflow-tasks.json');
+const tasksPath = process.argv[2] || resolve(process.cwd(), 'devflow.json');
 const items = JSON.parse(readFileSync(tasksPath, 'utf8'));
 
 const platformDir = process.cwd();

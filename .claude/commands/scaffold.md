@@ -681,7 +681,7 @@ This phase sets up the complete team development workflow (Trello board, branchi
    # Copy skills from node_modules to workspace .claude/skills/
    cp -r <workspace>/node_modules/devflow-cli/.claude/skills/* <workspace>/.claude/skills/
    ```
-   This enables `/devflow-task` in Claude Code. Add `.claude/skills/devflow-task/` to `.gitignore` or commit it — 建議 commit，這樣組員 clone 後不用額外操作。
+   This enables `/devflow` in Claude Code. Add `.claude/skills/devflow/` to `.gitignore` or commit it — 建議 commit，這樣組員 clone 後不用額外操作。
 
 7. **Export devflow config** for team members:
    ```bash
@@ -701,7 +701,7 @@ This phase sets up the complete team development workflow (Trello board, branchi
    2. yarn install（自動安裝 devflow-cli）
    3. npx devflow import devflow-<name>.json
    4. 輸入個人 Trello 憑證
-   5. 開始使用 npx devflow task / npx devflow pr / /devflow-task
+   5. 開始使用 npx devflow task / npx devflow pr / /devflow
    ```
 
 ### Phase 11: Verification
