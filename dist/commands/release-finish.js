@@ -3,7 +3,7 @@ import { resolveConfig } from '../utils/config.js';
 import { createPR } from '../services/github.js';
 import * as git from '../services/git.js';
 import { log } from '../utils/logger.js';
-export async function releaseFinishCommand(version) {
+export async function releaseFinishCommand(version, options) {
     const config = resolveConfig();
     if (!/^v?\d+\.\d+\.\d+$/.test(version)) {
         log.error('版號格式錯誤，須為 vX.Y.Z 或 X.Y.Z');
@@ -15,11 +15,11 @@ export async function releaseFinishCommand(version) {
     if (config.currentRepo)
         log.info(`Repo: ${config.currentRepo.repoRole}`);
     log.info(`Release 分支: ${branchName}`);
-    const createMainPR = await confirm({
+    const shouldCreatePR = options.yes || await confirm({
         message: `建立 PR: ${branchName} → main？`,
         default: true,
     });
-    if (createMainPR) {
+    if (shouldCreatePR) {
         try {
             git.fetch();
             git.pushBranch(branchName);
@@ -37,13 +37,15 @@ export async function releaseFinishCommand(version) {
             return;
         }
     }
-    const merged = await confirm({
-        message: 'PR 已 merge 到 main 了嗎？（確認後將打 tag 並同步回 develop）',
-        default: false,
-    });
-    if (!merged) {
-        log.info(`請 merge PR 後再重新執行 devflow release:finish ${ver}`);
-        return;
+    if (!options.yes) {
+        const merged = await confirm({
+            message: 'PR 已 merge 到 main 了嗎？（確認後將打 tag 並同步回 develop）',
+            default: false,
+        });
+        if (!merged) {
+            log.info(`請 merge PR 後再重新執行 devflow release:finish ${ver}`);
+            return;
+        }
     }
     try {
         git.checkout('main');

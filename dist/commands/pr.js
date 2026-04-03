@@ -5,7 +5,7 @@ import { createPR } from '../services/github.js';
 import * as git from '../services/git.js';
 import { parseCardIdFromBranch, getBaseBranch } from '../utils/branch.js';
 import { log } from '../utils/logger.js';
-export async function prCommand() {
+export async function prCommand(options) {
     const config = resolveConfig();
     const branch = git.getCurrentBranch();
     log.info(`目前分支: ${branch}`);
@@ -28,18 +28,26 @@ export async function prCommand() {
     const typeMatch = branch.match(/^(feature|chore|hotfix)\//);
     const type = (typeMatch ? typeMatch[1] : 'feature');
     const baseBranch = getBaseBranch(type);
-    const prTitle = await input({
-        message: 'PR 標題:',
-        default: card.name,
-    });
+    let prTitle;
+    if (options.yes) {
+        prTitle = card.name;
+    }
+    else {
+        prTitle = await input({
+            message: 'PR 標題:',
+            default: card.name,
+        });
+    }
     const prBody = `## Trello\n${card.shortUrl}\n\n## 變更摘要\n- \n\n## Checklist\n- [ ] 自測通過\n- [ ] 相關 i18n 已更新\n- [ ] 無 console.log 殘留`;
-    const ok = await confirm({
-        message: `將建立 PR: ${branch} → ${baseBranch}，確認？`,
-        default: true,
-    });
-    if (!ok) {
-        log.warn('已取消');
-        return;
+    if (!options.yes) {
+        const ok = await confirm({
+            message: `將建立 PR: ${branch} → ${baseBranch}，確認？`,
+            default: true,
+        });
+        if (!ok) {
+            log.warn('已取消');
+            return;
+        }
     }
     log.info('正在推送最新 commits...');
     try {

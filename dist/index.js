@@ -46,13 +46,16 @@ program
 program
     .command('pr')
     .description('建立 Pull Request + 同步 Trello 狀態')
-    .action(prCommand);
+    .option('-y, --yes', '跳過互動確認（適用於 CI / Claude Code）')
+    .action((options) => prCommand(options));
 program
     .command('release:create <version>')
     .description('從 develop 建立 release 分支')
-    .action(releaseCreateCommand);
+    .option('-y, --yes', '跳過互動確認（適用於 CI / Claude Code）')
+    .action((version, options) => releaseCreateCommand(version, options));
 program
     .command('release:finish <version>')
     .description('完成 release（PR → main、打 tag、同步 develop）')
-    .action(releaseFinishCommand);
+    .option('-y, --yes', '跳過互動確認（適用於 CI / Claude Code）')
+    .action((version, options) => releaseFinishCommand(version, options));
 program.parse();

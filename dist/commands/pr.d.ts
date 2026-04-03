@@ -1,1 +1,3 @@
-export declare function prCommand(): Promise<void>;
+export declare function prCommand(options: {
+    yes?: boolean;
+}): Promise<void>;
