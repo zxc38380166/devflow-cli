@@ -138,10 +138,11 @@ Phase 10（devflow 整合）自動完成：
 ### 安裝 devflow
 
 ```bash
-cd scripts/wt-cli
-yarn install
-yarn link
+# 在 workspace 根目錄
+yarn add -D github:zxc38380166/devflow-cli
 ```
+
+安裝後可透過 `npx devflow` 或 `yarn devflow` 執行。
 
 ### 初始化
 
@@ -197,8 +198,11 @@ devflow export
 ### Step 1：安裝 devflow
 
 ```bash
-cd scripts/wt-cli && yarn install && yarn link
+# clone workspace 後
+yarn install
 ```
+
+devflow-cli 已包含在 `devDependencies`，`yarn install` 會自動安裝。
 
 ### Step 2：取得 Trello Token
 
@@ -212,7 +216,7 @@ cd scripts/wt-cli && yarn install && yarn link
 ### Step 3：匯入設定
 
 ```bash
-devflow import devflow-myshop.json
+npx devflow import devflow-myshop.json
 ```
 
 ```
@@ -239,10 +243,10 @@ devflow link
 
 ## 四、日常開發指令
 
-### `devflow task` — 建立任務
+### `devflow task` — 建立任務（互動式）
 
 ```bash
-devflow task
+npx devflow task
 ```
 
 ```
@@ -265,6 +269,45 @@ devflow task
 | 移到 In Progress | 從 Backlog 自動移動 |
 | 建立 Git 分支 | feature/chore → `develop`、hotfix → `main` |
 | 推送分支 | `git push -u origin <branch>` |
+
+### `/devflow-task` — 建立任務（Claude Code skill）
+
+在 Claude Code 中使用，適合一次建多個 repo 的任務。
+
+**使用方式**：
+
+1. 編輯工作區根目錄的 `devflow-tasks.json`：
+
+```json
+[
+  {
+    "repo": "myshop-be",
+    "taskType": "feature",
+    "title": "新增對帳 API",
+    "description": "支援 ATM 每日自動對帳，產出差異報表",
+    "labels": ["backend"],
+    "members": ["alice"],
+    "dueDate": "",
+    "createBranch": true
+  },
+  {
+    "repo": "myshop-ec",
+    "taskType": "feature",
+    "title": "對帳報表頁面",
+    "description": "新增對帳結果查詢頁面，可篩選日期與狀態",
+    "labels": ["frontend"],
+    "members": ["alice"],
+    "dueDate": "",
+    "createBranch": true
+  }
+]
+```
+
+2. 在 Claude Code 輸入 `/devflow-task`
+
+**自動完成**：建立 Trello 卡片 → 移到 In Progress → 建立 Git 分支 → 推送
+
+> **安裝 skill**：`yarn add -D github:zxc38380166/devflow-cli` 後，將 `node_modules/devflow-cli/.claude/skills/` 複製到專案的 `.claude/skills/` 即可。scaffold 建置的新專案會自動完成此步驟。
 
 ### `devflow pr` — 建立 Pull Request
 
@@ -356,10 +399,11 @@ devflow use another-project
 
 | 指令 | 用途 | 誰用 |
 |------|------|------|
-| `devflow task` | 建立 Trello 卡片 + Git 分支 | 所有人 |
-| `devflow pr` | 建立 PR + 同步 Trello | 所有人 |
-| `devflow release:create <ver>` | 建立 release 分支 | 負責人 |
-| `devflow release:finish <ver>` | 完成 release | 負責人 |
+| `npx devflow task` | 建立 Trello 卡片 + Git 分支（互動式） | 所有人 |
+| `/devflow-task` | 建立 Trello 卡片 + Git 分支（Claude Code skill） | 所有人 |
+| `npx devflow pr` | 建立 PR + 同步 Trello | 所有人 |
+| `npx devflow release:create <ver>` | 建立 release 分支 | 負責人 |
+| `npx devflow release:finish <ver>` | 完成 release | 負責人 |
 
 ### 組合拳：一鍵開箱
 
@@ -478,7 +522,11 @@ devflow setup          # 1. 互動式收集所有參數，產生 scaffold.config
 - **`devflow init`** — 只建置開發流程（Trello + 分支策略），適合已有 repo 的情況
 
 ### Q: 我只 clone 了一個 repo，可以用 devflow 嗎？
-**可以。** devflow 是全域工具，設定存在 `~/.devflow/`，跟 repo 無關。
+**可以。** devflow 設定存在 `~/.devflow/`，跟 repo 無關。只要 `yarn install` 安裝過即可。
+
+### Q: `/devflow-task` 和 `npx devflow task` 有什麼差別？
+- **`npx devflow task`** — 終端互動式，一次建一張卡
+- **`/devflow-task`** — Claude Code skill，用 JSON 定義，可一次建多個 repo 的卡片 + 分支
 
 ### Q: scaffold.config.json 裡的密碼會被 commit 嗎？
 不會。`.gitignore` 已包含 `.env`，但 `scaffold.config.json` 本身沒被 ignore。建議用完後刪除，或加入 `.gitignore`。
@@ -490,11 +538,11 @@ devflow setup          # 1. 互動式收集所有參數，產生 scaffold.config
 可以。設定 `devflow.enabled: false`（或 setup 互動時選「否」），scaffold 會跳過 Phase 10。
 
 ### Q: 新組員怎麼最快上手？
-1. 安裝 devflow
-2. 管理員給 `devflow-xxx.json`
-3. `devflow import devflow-xxx.json`
-4. clone repo（`.devflow.json` 已在裡面）
-5. 開始用 `devflow task`
+1. `git clone --recursive <workspace>`
+2. `yarn install`（自動安裝 devflow-cli）
+3. 管理員給 `devflow-xxx.json`
+4. `npx devflow import devflow-xxx.json`
+5. 開始用 `npx devflow task` 或 `/devflow-task`
 
 ### Q: develop 分支不存在？
 `devflow task` 會自動從 main 建立並推送。
