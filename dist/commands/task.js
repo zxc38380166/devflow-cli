@@ -4,7 +4,7 @@ import { createCard, moveCard } from '../services/trello.js';
 import * as git from '../services/git.js';
 import { buildBranchName, getBaseBranch } from '../utils/branch.js';
 import { log } from '../utils/logger.js';
-export async function taskCommand() {
+export async function taskCommand(options = {}) {
     const config = resolveConfig();
     const type = await select({
         message: '任務類型',
@@ -79,7 +79,7 @@ export async function taskCommand() {
     await moveCard(config, card.id, config.board.lists.inProgress);
     log.success('卡片已移到 In Progress');
     // Git branch
-    const createBranch = await confirm({
+    const createBranch = options.yes ? true : await confirm({
         message: '是否建立 Git 分支？',
         default: true,
     });

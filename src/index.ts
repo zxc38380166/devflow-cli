@@ -51,7 +51,8 @@ program
 program
   .command('task')
   .description('建立 Trello 卡片 + Git 分支')
-  .action(taskCommand);
+  .option('-y, --yes', '跳過互動確認（適用於 CI / Claude Code）')
+  .action((options) => taskCommand(options));
 
 program
   .command('pr')

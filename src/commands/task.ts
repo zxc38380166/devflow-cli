@@ -6,7 +6,7 @@ import { buildBranchName, getBaseBranch } from '../utils/branch.js';
 import { log } from '../utils/logger.js';
 import type { TaskType } from '../types/index.js';
 
-export async function taskCommand(): Promise<void> {
+export async function taskCommand(options: { yes?: boolean } = {}): Promise<void> {
   const config = resolveConfig();
 
   const type = await select<TaskType>({
@@ -91,7 +91,7 @@ export async function taskCommand(): Promise<void> {
   log.success('卡片已移到 In Progress');
 
   // Git branch
-  const createBranch = await confirm({
+  const createBranch = options.yes ? true : await confirm({
     message: '是否建立 Git 分支？',
     default: true,
   });
