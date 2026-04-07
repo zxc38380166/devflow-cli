@@ -4,6 +4,15 @@ function run(cmd: string, cwd?: string): string {
   return execSync(cmd, { encoding: 'utf-8', cwd, stdio: 'pipe' }).trim();
 }
 
+export function mergePR(params: {
+  branch: string;
+  method?: 'merge' | 'squash' | 'rebase';
+  cwd?: string;
+}): void {
+  const { branch, method = 'merge', cwd } = params;
+  run(`gh pr merge "${branch}" --${method} --delete-branch`, cwd);
+}
+
 export function createPR(params: {
   title: string;
   body: string;

@@ -1,1 +1,3 @@
-export declare function taskCommand(): Promise<void>;
+export declare function taskCommand(options?: {
+    yes?: boolean;
+}): Promise<void>;

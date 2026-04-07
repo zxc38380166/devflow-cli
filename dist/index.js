@@ -55,5 +55,6 @@ program
 program
     .command('release:finish <version>')
     .description('完成 release（PR → main、打 tag、同步 develop）')
-    .action(releaseFinishCommand);
+    .option('-y, --yes', '跳過互動確認並自動 merge PR')
+    .action((version, options) => releaseFinishCommand(version, options));
 program.parse();

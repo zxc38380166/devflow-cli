@@ -1,10 +1,10 @@
 import { confirm } from '@inquirer/prompts';
 import { resolveConfig } from '../utils/config.js';
-import { createPR } from '../services/github.js';
+import { createPR, mergePR } from '../services/github.js';
 import * as git from '../services/git.js';
 import { getListCards, moveCard } from '../services/trello.js';
 import { log } from '../utils/logger.js';
-export async function releaseFinishCommand(version) {
+export async function releaseFinishCommand(version, options = {}) {
     const config = resolveConfig();
     if (!/^v?\d+\.\d+\.\d+$/.test(version)) {
         log.error('版號格式錯誤，須為 vX.Y.Z 或 X.Y.Z');
@@ -16,7 +16,7 @@ export async function releaseFinishCommand(version) {
     if (config.currentRepo)
         log.info(`Repo: ${config.currentRepo.repoRole}`);
     log.info(`Release 分支: ${branchName}`);
-    const createMainPR = await confirm({
+    const createMainPR = options.yes ? true : await confirm({
         message: `建立 PR: ${branchName} → main？`,
         default: true,
     });
@@ -38,13 +38,26 @@ export async function releaseFinishCommand(version) {
             return;
         }
     }
-    const merged = await confirm({
-        message: 'PR 已 merge 到 main 了嗎？（確認後將打 tag 並同步回 develop）',
-        default: false,
-    });
-    if (!merged) {
-        log.info(`請 merge PR 後再重新執行 devflow release:finish ${ver}`);
-        return;
+    if (options.yes) {
+        log.info('正在自動 merge PR...');
+        try {
+            mergePR({ branch: branchName });
+            log.success('PR 已自動 merge');
+        }
+        catch (err) {
+            log.error(`自動 merge 失敗: ${err instanceof Error ? err.message : err}`);
+            return;
+        }
+    }
+    else {
+        const merged = await confirm({
+            message: 'PR 已 merge 到 main 了嗎？（確認後將打 tag 並同步回 develop）',
+            default: false,
+        });
+        if (!merged) {
+            log.info(`請 merge PR 後再重新執行 devflow release:finish ${ver}`);
+            return;
+        }
     }
     try {
         git.checkout('main');
