@@ -14,7 +14,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "postinstall": "node -e \"const{cpSync,mkdirSync}=require('fs'),{resolve}=require('path');const b=resolve(process.cwd(),'node_modules/devflow-cli/.claude');const t=resolve(process.cwd(),'.claude');try{mkdirSync(resolve(t,'commands'),{recursive:true});mkdirSync(resolve(t,'skills'),{recursive:true});cpSync(resolve(b,'commands'),resolve(t,'commands'),{recursive:true});cpSync(resolve(b,'skills'),resolve(t,'skills'),{recursive:true});console.log('✅ devflow-cli: .claude/commands + skills copied')}catch(e){}\""
+    "postinstall": "node -e \"const{cpSync,mkdirSync}=require('fs'),{resolve}=require('path');const root=process.env.INIT_CWD||process.cwd();const b=resolve(__dirname,'.claude');const t=resolve(root,'.claude');try{mkdirSync(resolve(t,'commands'),{recursive:true});mkdirSync(resolve(t,'skills'),{recursive:true});cpSync(resolve(b,'commands'),resolve(t,'commands'),{recursive:true});cpSync(resolve(b,'skills'),resolve(t,'skills'),{recursive:true});console.log('✅ devflow-cli: .claude/commands + skills copied to',t)}catch(e){console.warn('⚠️ devflow-cli postinstall:',e.message)}\""
   },
   "dependencies": {
     "chalk": "^5.4.0",
