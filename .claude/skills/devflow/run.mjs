@@ -241,6 +241,25 @@ async function handleReleaseFinish(item) {
     console.error(`❌ Git 錯誤: ${err.message}`);
     try { git('stash pop', repoDir); } catch {}
   }
+
+  // 將該 repo 在 In Review 的卡片移到 Done
+  const inReviewListId = LISTS.inReview;
+  const doneListId = LISTS.done;
+  if (inReviewListId && doneListId) {
+    try {
+      const params = new URLSearchParams({ key: TRELLO_KEY, token: TRELLO_TOKEN });
+      const cards = await fetch(`https://api.trello.com/1/lists/${inReviewListId}/cards?${params}`).then(r => r.json());
+      for (const card of cards) {
+        const match = card.name.match(/^\[([^\]]+)\]/);
+        if (match && match[1] === item.repo) {
+          await trelloPut(`/cards/${card.id}`, { idList: doneListId });
+          console.log(`✅ Trello 卡片已移到 Done: ${card.name}`);
+        }
+      }
+    } catch (err) {
+      console.error(`⚠️ Trello 移卡失敗: ${err.message}`);
+    }
+  }
 }
 
 // ── Action: pr ──
