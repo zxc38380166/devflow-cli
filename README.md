@@ -79,8 +79,6 @@ node node_modules/devflow-cli/.claude/skills/devflow/run.mjs
 |------|------|
 | frontend | FE |
 | backend | BE |
-| admin | ADMIN |
-| mobile | MB |
 
 ## 分支命名
 

@@ -7,7 +7,7 @@ import { log } from '../utils/logger.js';
 import type { TaskType } from '../types/index.js';
 
 const ROLE_ABBREV: Record<string, string> = {
-  frontend: 'FE', backend: 'BE', admin: 'ADMIN', mobile: 'MB',
+  frontend: 'FE', backend: 'BE',
 };
 
 export async function taskCommand(options: { yes?: boolean } = {}): Promise<void> {

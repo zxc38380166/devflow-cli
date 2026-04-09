@@ -6,7 +6,7 @@ import { loadGlobalConfig, saveGlobalConfig, saveProjectConfig, getConfigBase } 
 import { getBoardLists, getBoardLabels, getBoardMembers, createBoard, createList, createLabel, } from '../services/trello.js';
 import { log } from '../utils/logger.js';
 /** Suffixes that indicate a repo role, used to strip from project name */
-const ROLE_SUFFIXES = ['ec', 'be', 'ims', 'web', 'api', 'admin', 'frontend', 'backend', 'mobile', 'app'];
+const ROLE_SUFFIXES = ['ec', 'be', 'ims', 'web', 'api', 'frontend', 'backend'];
 const DEFAULT_LISTS = ['Backlog', 'To Do', 'In Progress', 'In Review', 'Done'];
 const DEFAULT_LABELS = [
     { name: 'frontend', color: 'blue' },
@@ -109,12 +109,8 @@ function guessRole(dirName) {
     const lower = dirName.toLowerCase();
     if (lower.includes('ec') || lower.includes('web') || lower.includes('frontend'))
         return 'frontend';
-    if (lower.includes('ims') || lower.includes('admin'))
-        return 'admin';
     if (lower.includes('be') || lower.includes('api') || lower.includes('backend'))
         return 'backend';
-    if (lower.includes('mobile') || lower.includes('app'))
-        return 'mobile';
     return basename(dirName).toLowerCase();
 }
 export async function initCommand(options) {

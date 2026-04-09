@@ -96,7 +96,7 @@ function buildBranchName(type, idShort, title) {
   return `${prefix}/${idShort}-${slug}`;
 }
 
-const ROLE_ABBREV = { frontend: 'FE', backend: 'BE', admin: 'ADMIN', mobile: 'MB' };
+const ROLE_ABBREV = { frontend: 'FE', backend: 'BE' };
 
 function getRepoRole(repoName) {
   for (const [role, info] of Object.entries(REPOS)) {

@@ -5,7 +5,7 @@ import * as git from '../services/git.js';
 import { buildBranchName, getBaseBranch } from '../utils/branch.js';
 import { log } from '../utils/logger.js';
 const ROLE_ABBREV = {
-    frontend: 'FE', backend: 'BE', admin: 'ADMIN', mobile: 'MB',
+    frontend: 'FE', backend: 'BE',
 };
 export async function taskCommand(options = {}) {
     const config = resolveConfig();
