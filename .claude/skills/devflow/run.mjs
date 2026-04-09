@@ -250,13 +250,13 @@ async function handlePR(item) {
 
   console.log(`📝 建立 PR: ${branch}`);
 
-  // 解析 card ID from branch name
-  const match = branch.match(/^(?:feature|chore|hotfix)\/([a-zA-Z0-9]+)-/);
+  // 解析 card ID from branch name (支援縮寫 feat/fix 和全名 feature/hotfix)
+  const match = branch.match(/^(?:feat|feature|chore|fix|hotfix)\/([a-zA-Z0-9]+)-/);
   const shortLink = match ? match[1] : null;
 
   // 決定 base branch
-  const typeMatch = branch.match(/^(feature|chore|hotfix)\//);
-  const baseBranch = typeMatch && typeMatch[1] === 'hotfix' ? 'main' : 'develop';
+  const typeMatch = branch.match(/^(feat|feature|chore|fix|hotfix)\//);
+  const baseBranch = typeMatch && ['hotfix', 'fix'].includes(typeMatch[1]) ? 'main' : 'develop';
 
   let prTitle = item.title || branch;
   let prBody = '';
