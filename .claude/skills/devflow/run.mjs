@@ -96,6 +96,8 @@ function buildBranchName(type, idShort, title) {
   return `${prefix}/${idShort}-${slug}`;
 }
 
+const ROLE_ABBREV = { frontend: 'FE', backend: 'BE', admin: 'ADMIN', mobile: 'MB' };
+
 function getRepoRole(repoName) {
   for (const [role, info] of Object.entries(REPOS)) {
     if (info.name === repoName) return role;
@@ -103,12 +105,17 @@ function getRepoRole(repoName) {
   return repoName;
 }
 
+function buildCardName(repoName, title) {
+  const role = getRepoRole(repoName);
+  const abbrev = ROLE_ABBREV[role] || role.toUpperCase();
+  return `[${repoName}][${abbrev}] ${title}`;
+}
+
 // ── Action: task ──
 
 async function handleTask(item) {
-  const repoRole = getRepoRole(item.repo);
   const repoDir = resolve(platformDir, item.repo);
-  const cardName = `[${repoRole}] ${item.title}`;
+  const cardName = buildCardName(item.repo, item.title);
 
   console.log(`📋 建立 Trello 卡片: ${cardName}`);
 

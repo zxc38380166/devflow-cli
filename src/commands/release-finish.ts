@@ -82,14 +82,17 @@ export async function releaseFinishCommand(version: string, options: { yes?: boo
 
     // 將本 repo 在 In Review 的 Trello 卡片移到 Done
     const repoRole = config.currentRepo?.repoRole;
+    const repoEntry = repoRole ? config.repos[repoRole] : null;
+    const repoName = repoEntry?.name;
     const inReviewListId = config.board.lists.inReview;
     const doneListId = config.board.lists.done;
-    if (repoRole && inReviewListId && doneListId) {
+    if (repoName && inReviewListId && doneListId) {
       try {
         const cards = await getListCards(config, inReviewListId);
         for (const card of cards) {
+          // 匹配新格式 [repoName][ABBREV] 或舊格式 [role]
           const match = card.name.match(/^\[([^\]]+)\]/);
-          if (match && match[1] === repoRole) {
+          if (match && (match[1] === repoName || match[1] === repoRole)) {
             await moveCard(config, card.id, doneListId);
             log.success(`Trello 卡片已移到 Done: ${card.name}`);
           }

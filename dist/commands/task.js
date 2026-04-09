@@ -4,6 +4,9 @@ import { createCard, moveCard } from '../services/trello.js';
 import * as git from '../services/git.js';
 import { buildBranchName, getBaseBranch } from '../utils/branch.js';
 import { log } from '../utils/logger.js';
+const ROLE_ABBREV = {
+    frontend: 'FE', backend: 'BE', admin: 'ADMIN', mobile: 'MB',
+};
 export async function taskCommand(options = {}) {
     const config = resolveConfig();
     const type = await select({
@@ -47,26 +50,32 @@ export async function taskCommand(options = {}) {
             return /^\d{4}-\d{2}-\d{2}$/.test(v) ? true : '格式須為 YYYY-MM-DD';
         },
     });
-    // Determine current repo role
-    let repoTag = '';
+    // Determine current repo
+    let repoName = '';
+    let repoRole = '';
     if (config.currentRepo) {
-        repoTag = config.currentRepo.repoRole;
+        repoRole = config.currentRepo.repoRole;
+        // Find repo name by role
+        const entry = config.repos[repoRole];
+        repoName = entry?.name ?? '';
     }
     else {
         const roles = Object.keys(config.repos);
         if (roles.length > 0) {
-            repoTag = await select({
+            repoRole = await select({
                 message: '此任務屬於哪個 repo？',
                 choices: roles.map((r) => ({
                     name: `${config.repos[r].name} (${r})`,
                     value: r,
                 })),
             });
+            repoName = config.repos[repoRole]?.name ?? '';
         }
     }
     console.log();
     log.info('正在建立 Trello 卡片...');
-    const cardName = repoTag ? `[${repoTag}] ${title}` : title;
+    const abbrev = ROLE_ABBREV[repoRole] ?? repoRole.toUpperCase();
+    const cardName = repoName ? `[${repoName}][${abbrev}] ${title}` : title;
     const card = await createCard(config, {
         name: cardName,
         desc: desc || undefined,
