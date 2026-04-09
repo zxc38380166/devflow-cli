@@ -6,11 +6,11 @@ import { loadGlobalConfig, saveGlobalConfig, saveProjectConfig, getConfigBase } 
 import { getBoardLists, getBoardLabels, getBoardMembers, createBoard, createList, createLabel, } from '../services/trello.js';
 import { log } from '../utils/logger.js';
 /** Suffixes that indicate a repo role, used to strip from project name */
-const ROLE_SUFFIXES = ['ec', 'be', 'ims', 'web', 'api', 'frontend', 'backend'];
+const ROLE_SUFFIXES = ['ec', 'be', 'ims', 'web', 'api'];
 const DEFAULT_LISTS = ['Backlog', 'To Do', 'In Progress', 'In Review', 'Done'];
 const DEFAULT_LABELS = [
-    { name: 'frontend', color: 'blue' },
-    { name: 'backend', color: 'yellow' },
+    { name: 'FE', color: 'blue' },
+    { name: 'BE', color: 'yellow' },
     { name: 'urgent', color: 'red' },
 ];
 /**
@@ -107,11 +107,11 @@ function detectProject() {
 }
 function guessRole(dirName) {
     const lower = dirName.toLowerCase();
-    if (lower.includes('ec') || lower.includes('web') || lower.includes('frontend'))
-        return 'frontend';
-    if (lower.includes('be') || lower.includes('api') || lower.includes('backend'))
-        return 'backend';
-    return basename(dirName).toLowerCase();
+    if (lower.includes('ec') || lower.includes('web'))
+        return 'FE';
+    if (lower.includes('be') || lower.includes('api'))
+        return 'BE';
+    return basename(dirName).toUpperCase();
 }
 export async function initCommand(options) {
     log.info('Devflow 專案初始化');
@@ -299,7 +299,7 @@ async function collectRepos() {
             validate: (v) => (v.length > 0 ? true : '必填'),
         });
         const role = await input({
-            message: `${repoName} 的角色（如 frontend / backend / mobile）:`,
+            message: `${repoName} 的角色（如 FE / BE）:`,
             validate: (v) => (v.length > 0 ? true : '必填'),
         });
         repos[role] = { name: repoName, role };

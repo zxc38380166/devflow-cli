@@ -85,18 +85,13 @@ function ensureDevelop(cwd) {
 
 // ── Branch name builder ──
 
-const BRANCH_PREFIX = { feature: 'feat', chore: 'chore', hotfix: 'fix' };
-
 function buildBranchName(type, idShort, title) {
-  const prefix = BRANCH_PREFIX[type] || type;
   const slug = title
     .replace(/[^\u4e00-\u9fffa-z0-9]+/gi, '-')
     .replace(/^-|-$/g, '')
     .slice(0, 15);
-  return `${prefix}/${idShort}-${slug}`;
+  return `${type}/${idShort}-${slug}`;
 }
-
-const ROLE_ABBREV = { frontend: 'FE', backend: 'BE' };
 
 function getRepoRole(repoName) {
   for (const [role, info] of Object.entries(REPOS)) {
@@ -107,8 +102,7 @@ function getRepoRole(repoName) {
 
 function buildCardName(repoName, title) {
   const role = getRepoRole(repoName);
-  const abbrev = ROLE_ABBREV[role] || role.toUpperCase();
-  return `[${repoName}][${abbrev}] ${title}`;
+  return `[${repoName}][${role}] ${title}`;
 }
 
 // ── Action: task ──
@@ -139,7 +133,7 @@ async function handleTask(item) {
   console.log('✅ 已移到 In Progress');
 
   if (item.createBranch) {
-    const baseBranch = item.taskType === 'hotfix' ? 'main' : 'develop';
+    const baseBranch = item.taskType === 'fix' ? 'main' : 'develop';
     const branchName = buildBranchName(item.taskType, String(card.idShort), item.title);
     console.log(`🔀 建立分支: ${branchName} (from ${baseBranch})`);
 
@@ -257,13 +251,13 @@ async function handlePR(item) {
 
   console.log(`📝 建立 PR: ${branch}`);
 
-  // 解析 card ID from branch name (支援縮寫 feat/fix 和全名 feature/hotfix)
-  const match = branch.match(/^(?:feat|feature|chore|fix|hotfix)\/([a-zA-Z0-9]+)-/);
+  // 解析 card ID from branch name
+  const match = branch.match(/^(?:feat|chore|fix)\/([a-zA-Z0-9]+)-/);
   const shortLink = match ? match[1] : null;
 
   // 決定 base branch
-  const typeMatch = branch.match(/^(feat|feature|chore|fix|hotfix)\//);
-  const baseBranch = typeMatch && ['hotfix', 'fix'].includes(typeMatch[1]) ? 'main' : 'develop';
+  const typeMatch = branch.match(/^(feat|chore|fix)\//);
+  const baseBranch = typeMatch && typeMatch[1] === 'fix' ? 'main' : 'develop';
 
   let prTitle = item.title || branch;
   let prBody = '';

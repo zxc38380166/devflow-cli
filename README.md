@@ -40,10 +40,10 @@ yarn add -D github:zxc38380166/devflow-cli
   {
     "action": "task",
     "repo": "WT-be",
-    "taskType": "feature",
+    "taskType": "feat",
     "title": "新增代付註記 API",
     "description": "PM 可讀的描述",
-    "labels": ["backend"],
+    "labels": ["BE"],
     "members": [],
     "dueDate": "",
     "createBranch": true
@@ -66,19 +66,12 @@ node node_modules/devflow-cli/.claude/skills/devflow/run.mjs
 
 ## Trello 卡片命名
 
-卡片名稱格式為 `[專案名][角色縮寫] 標題`，例如：
+卡片名稱格式為 `[專案名][角色] 標題`，例如：
 
 ```
 [WT-ec][FE] 發票歷程稅額%數添加
 [WT-be][BE] 代付註記功能後端 API
 ```
-
-角色縮寫對照：
-
-| 角色 | 縮寫 |
-|------|------|
-| frontend | FE |
-| backend | BE |
 
 ## 分支命名
 
@@ -90,13 +83,11 @@ chore/42-重構登入模組
 fix/58-修復金額計算錯誤
 ```
 
-前綴對照：
-
-| 任務類型 | 分支前綴 | 從哪切 | 合併回 |
-|----------|----------|--------|--------|
-| feature | `feat` | develop | → develop |
-| chore | `chore` | develop | → develop |
-| hotfix | `fix` | main | → main，再同步回 develop |
+| 任務類型 | 從哪切 | 合併回 |
+|----------|--------|--------|
+| feat | develop | → develop |
+| chore | develop | → develop |
+| fix | main | → main，再同步回 develop |
 
 > slug 最多 15 字元，支援中文
 
@@ -143,7 +134,7 @@ main ─────────────────────────
 ```
  ┌─────────────────────────────────────────────────────────────────────┐
  │                         devflow task                               │
- │  互動選擇 feature/chore → 建立 Trello 卡片 → 從 develop 切分支     │
+ │  互動選擇 feat/chore/fix → 建立 Trello 卡片 → 切分支               │
  └────────────────────────────┬────────────────────────────────────────┘
                               │
                               ▼
@@ -196,7 +187,7 @@ main ─────────────────────────
                 │
                 ▼
  ┌─────────────────────────────────────────────────────────────────────┐
- │  devflow task（選擇 hotfix）                                        │
+ │  devflow task（選擇 fix）                                            │
  │  從 main 切出 fix/58-修復名稱                                       │
  └────────────────────────────┬────────────────────────────────────────┘
                               │
@@ -247,7 +238,7 @@ main ─────────────────────────
             │                                      │
             │  ✅ 只允許 bugfix                    │
             │  ❌ 不收新功能                       │
-            │  develop 繼續收下一版 feature         │
+            │  develop 繼續收下一版 feat             │
             └─────────────────┬───────────────────┘
                               │
                     QA 測試 & 修 bug

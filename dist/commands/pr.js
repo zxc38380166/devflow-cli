@@ -25,10 +25,8 @@ export async function prCommand() {
     }
     log.info(`卡片: ${card.name}`);
     log.info(`連結: ${card.shortUrl}`);
-    const typeMatch = branch.match(/^(feat|chore|fix|feature|hotfix)\//);
-    const typeMap = { feat: 'feature', fix: 'hotfix' };
-    const rawType = typeMatch ? typeMatch[1] : 'feature';
-    const type = (typeMap[rawType] || rawType);
+    const typeMatch = branch.match(/^(feat|chore|fix)\//);
+    const type = (typeMatch ? typeMatch[1] : 'feat');
     const baseBranch = getBaseBranch(type);
     const prTitle = await input({
         message: 'PR 標題:',

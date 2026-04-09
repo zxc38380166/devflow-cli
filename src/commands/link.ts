@@ -57,7 +57,7 @@ export async function linkCommand(): Promise<void> {
     });
   } else {
     repoRole = await input({
-      message: 'Repo 角色（如 frontend / backend）:',
+      message: 'Repo 角色（如 FE / BE）:',
       validate: (v) => v.length > 0 || '必填',
     });
   }

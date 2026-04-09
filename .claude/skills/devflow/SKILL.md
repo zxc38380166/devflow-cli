@@ -23,10 +23,10 @@ JSON 為陣列，每筆資料的 `action` 欄位決定操作類型：
 {
   "action": "task",
   "repo": "子專案目錄名稱",
-  "taskType": "feature | chore | hotfix",
+  "taskType": "feat | chore | fix",
   "title": "卡片標題",
   "description": "PM 易讀的描述",
-  "labels": ["frontend | backend | urgent"],
+  "labels": ["FE | BE | urgent"],
   "members": ["成員 key"],
   "dueDate": "YYYY-MM-DD 或空字串",
   "createBranch": true
@@ -66,7 +66,7 @@ JSON 為陣列，每筆資料的 `action` 欄位決定操作類型：
 
 ```json
 [
-  { "action": "task", "repo": "WT-be", "taskType": "feature", "title": "新增 API", "description": "...", "labels": ["backend"], "members": ["user1"], "createBranch": true },
+  { "action": "task", "repo": "WT-be", "taskType": "feat", "title": "新增 API", "description": "...", "labels": ["BE"], "members": ["user1"], "createBranch": true },
   { "action": "release:create", "repo": "WT-be", "version": "1.0.9" },
   { "action": "release:create", "repo": "WT-ec", "version": "1.0.9" }
 ]

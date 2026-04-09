@@ -638,7 +638,7 @@ This phase sets up the complete team development workflow (Trello board, branchi
 2. **Create Trello Board** via API:
    - Board name from `devflow.trello.boardName` (default: uppercase `<name>`)
    - Auto-create 5 Lists: Backlog, To Do, In Progress, In Review, Done
-   - Auto-create 3 Labels: frontend (blue), backend (yellow), urgent (red)
+   - Auto-create 3 Labels: FE (blue), BE (yellow), urgent (red)
    - Fetch board members
 
 3. **Save devflow config**:
@@ -648,9 +648,8 @@ This phase sets up the complete team development workflow (Trello board, branchi
    Repos config:
    ```json
    {
-     "ec": { "name": "<name>-ec", "role": "frontend" },
-     "ims": { "name": "<name>-ims", "role": "admin" },
-     "be": { "name": "<name>-be", "role": "backend" }
+     "FE": { "name": "<name>-ec", "role": "FE" },
+     "BE": { "name": "<name>-be", "role": "BE" }
    }
    ```
 
@@ -658,15 +657,11 @@ This phase sets up the complete team development workflow (Trello board, branchi
 
    In `<name>-ec/`:
    ```json
-   { "project": "<name>", "repoRole": "frontend" }
-   ```
-   In `<name>-ims/`:
-   ```json
-   { "project": "<name>", "repoRole": "admin" }
+   { "project": "<name>", "repoRole": "FE" }
    ```
    In `<name>-be/`:
    ```json
-   { "project": "<name>", "repoRole": "backend" }
+   { "project": "<name>", "repoRole": "BE" }
    ```
 
 5. **Create `develop` branch** in each sub-repo:

@@ -159,8 +159,8 @@ devflow 會自動偵測專案結構：
 ```
 ✔ 偵測到既有專案: myshop
 ℹ Repos:
-    WT-ec (frontend)
-    WT-be (backend)
+    WT-ec (FE)
+    WT-be (BE)
 
 ? 使用偵測到的設定？ Yes
 ? Trello API Key: xxxxxxxx
@@ -267,7 +267,7 @@ npx devflow import devflow-myshop.json
 
 # 4. 連結 repo（如果 .devflow.json 已存在則跳過此步）
 npx devflow link
-# → 選擇此 repo 的角色（如 frontend）
+# → 選擇此 repo 的角色（如 FE）
 
 # 5. 完成！
 ```
@@ -339,24 +339,24 @@ npx devflow task
 ```
 
 ```
-? 任務類型: feature — 新功能
+? 任務類型: feat — 新功能
 ? 標題: 新增 ATM 對帳功能
 ? 描述: 支援每日自動比對
-? 標籤: ☑ frontend
+? 標籤: ☑ FE
 ? 指派給: ☑ alice
 ? 到期日: 2026-04-01
 ? 是否建立 Git 分支？ Yes
 
 ✔ Trello 卡片已建立: https://trello.com/c/abc123
 ✔ 卡片已移到 In Progress
-✔ 分支已建立並推送: feature/abc123-atm-reconciliation
+✔ 分支已建立並推送: feat/abc123-atm-reconciliation
 ```
 
 | 自動動作 | 說明 |
 |----------|------|
 | Trello 建卡 | 名稱帶 `[repoRole]` 前綴 |
 | 移到 In Progress | 從 Backlog 自動移動 |
-| 建立 Git 分支 | feature/chore → `develop`、hotfix → `main` |
+| 建立 Git 分支 | feat/chore → `develop`、fix → `main` |
 | 推送分支 | `git push -u origin <branch>` |
 
 ### `/devflow` — 自動化操作（Claude Code skill）
@@ -371,7 +371,7 @@ npx devflow task
 
 ```json
 [
-  { "action": "task", "repo": "myshop-be", "taskType": "feature", "title": "新增對帳 API", "description": "支援 ATM 每日自動對帳", "labels": ["backend"], "members": ["alice"], "createBranch": true },
+  { "action": "task", "repo": "myshop-be", "taskType": "feat", "title": "新增對帳 API", "description": "支援 ATM 每日自動對帳", "labels": ["BE"], "members": ["alice"], "createBranch": true },
   { "action": "release:create", "repo": "myshop-be", "version": "1.0.9" },
   { "action": "release:create", "repo": "myshop-ec", "version": "1.0.9" },
   { "action": "pr", "repo": "myshop-be" }
@@ -391,9 +391,9 @@ devflow pr
 ```
 
 ```
-ℹ 目前分支: feature/abc123-atm-reconciliation
-ℹ 卡片: [frontend] 新增 ATM 對帳功能
-? PR 標題: [frontend] 新增 ATM 對帳功能
+ℹ 目前分支: feat/abc123-atm-reconciliation
+ℹ 卡片: [myshop-ec][FE] 新增 ATM 對帳功能
+? PR 標題: [myshop-ec][FE] 新增 ATM 對帳功能
 ? 確認建立 PR？ Yes
 
 ✔ PR 已建立: https://github.com/org/myshop-ec/pull/42
@@ -561,15 +561,15 @@ devflow setup          # 1. 互動式收集所有參數，產生 scaffold.config
 {
   "projectName": "myshop",
   "repos": {
-    "frontend": { "name": "myshop-ec", "role": "frontend" },
+    "FE": { "name": "myshop-ec", "role": "FE" },
     "admin": { "name": "myshop-ims", "role": "admin" },
-    "backend": { "name": "myshop-be", "role": "backend" }
+    "BE": { "name": "myshop-be", "role": "BE" }
   },
   "board": {
     "boardId": "xxx",
     "boardUrl": "https://trello.com/b/xxx",
     "lists": { "backlog": "...", "todo": "...", "inProgress": "...", "inReview": "...", "done": "..." },
-    "labels": { "frontend": "...", "backend": "...", "urgent": "..." },
+    "labels": { "FE": "...", "BE": "...", "urgent": "..." },
     "members": { "alice": "...", "bob": "..." }
   }
 }
@@ -580,7 +580,7 @@ devflow setup          # 1. 互動式收集所有參數，產生 scaffold.config
 ```json
 {
   "project": "myshop",
-  "repoRole": "frontend"
+  "repoRole": "FE"
 }
 ```
 

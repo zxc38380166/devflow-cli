@@ -45,7 +45,7 @@ export interface ResolvedConfig {
   currentRepo: RepoLocalConfig | null;
 }
 
-export type TaskType = 'feature' | 'chore' | 'hotfix';
+export type TaskType = 'feat' | 'chore' | 'fix';
 
 export interface TrelloCard {
   id: string;

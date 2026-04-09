@@ -31,10 +31,8 @@ export async function prCommand(): Promise<void> {
   log.info(`卡片: ${card.name}`);
   log.info(`連結: ${card.shortUrl}`);
 
-  const typeMatch = branch.match(/^(feat|chore|fix|feature|hotfix)\//);
-  const typeMap: Record<string, TaskType> = { feat: 'feature', fix: 'hotfix' };
-  const rawType = typeMatch ? typeMatch[1] : 'feature';
-  const type = (typeMap[rawType] || rawType) as TaskType;
+  const typeMatch = branch.match(/^(feat|chore|fix)\//);
+  const type = (typeMatch ? typeMatch[1] : 'feat') as TaskType;
   const baseBranch = getBaseBranch(type);
 
   const prTitle = await input({
