@@ -1,5 +1,5 @@
 export function getBaseBranch(type) {
-    return type === 'fix' ? 'main' : 'develop';
+    return type === 'hotfix' ? 'main' : 'develop';
 }
 export function buildBranchName(type, idShort, title) {
     const slug = title
@@ -9,6 +9,6 @@ export function buildBranchName(type, idShort, title) {
     return `${type}/${idShort}-${slug}`;
 }
 export function parseCardIdFromBranch(branch) {
-    const match = branch.match(/^(?:feat|chore|fix)\/(\d+)-/);
+    const match = branch.match(/^(?:feat|chore|hotfix)\/(\d+)-/);
     return match ? match[1] : null;
 }

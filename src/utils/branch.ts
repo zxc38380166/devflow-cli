@@ -1,7 +1,7 @@
 import type { TaskType } from '../types/index.js';
 
 export function getBaseBranch(type: TaskType): string {
-  return type === 'fix' ? 'main' : 'develop';
+  return type === 'hotfix' ? 'main' : 'develop';
 }
 
 export function buildBranchName(type: TaskType, idShort: string, title: string): string {
@@ -13,6 +13,6 @@ export function buildBranchName(type: TaskType, idShort: string, title: string):
 }
 
 export function parseCardIdFromBranch(branch: string): string | null {
-  const match = branch.match(/^(?:feat|chore|fix)\/(\d+)-/);
+  const match = branch.match(/^(?:feat|chore|hotfix)\/(\d+)-/);
   return match ? match[1] : null;
 }

@@ -14,7 +14,7 @@ export async function taskCommand(options: { yes?: boolean } = {}): Promise<void
     choices: [
       { name: 'feat  — 新功能', value: 'feat' },
       { name: 'chore — 雜務/重構', value: 'chore' },
-      { name: 'fix   — 緊急修復', value: 'fix' },
+      { name: 'hotfix — 緊急修復', value: 'hotfix' },
     ],
   });
 

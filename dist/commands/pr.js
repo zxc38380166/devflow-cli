@@ -25,7 +25,7 @@ export async function prCommand() {
     }
     log.info(`卡片: ${card.name}`);
     log.info(`連結: ${card.shortUrl}`);
-    const typeMatch = branch.match(/^(feat|chore|fix)\//);
+    const typeMatch = branch.match(/^(feat|chore|hotfix)\//);
     const type = (typeMatch ? typeMatch[1] : 'feat');
     const baseBranch = getBaseBranch(type);
     const prTitle = await input({

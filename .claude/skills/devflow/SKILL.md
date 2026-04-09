@@ -23,7 +23,7 @@ JSON 為陣列，每筆資料的 `action` 欄位決定操作類型：
 {
   "action": "task",
   "repo": "子專案目錄名稱",
-  "taskType": "feat | chore | fix",
+  "taskType": "feat | chore | hotfix",
   "title": "卡片標題",
   "description": "PM 易讀的描述",
   "labels": ["FE | BE | urgent"],

@@ -133,7 +133,7 @@ async function handleTask(item) {
   console.log('✅ 已移到 In Progress');
 
   if (item.createBranch) {
-    const baseBranch = item.taskType === 'fix' ? 'main' : 'develop';
+    const baseBranch = item.taskType === 'hotfix' ? 'main' : 'develop';
     const branchName = buildBranchName(item.taskType, String(card.idShort), item.title);
     console.log(`🔀 建立分支: ${branchName} (from ${baseBranch})`);
 
@@ -252,12 +252,12 @@ async function handlePR(item) {
   console.log(`📝 建立 PR: ${branch}`);
 
   // 解析 card ID from branch name
-  const match = branch.match(/^(?:feat|chore|fix)\/([a-zA-Z0-9]+)-/);
+  const match = branch.match(/^(?:feat|chore|hotfix)\/([a-zA-Z0-9]+)-/);
   const shortLink = match ? match[1] : null;
 
   // 決定 base branch
-  const typeMatch = branch.match(/^(feat|chore|fix)\//);
-  const baseBranch = typeMatch && typeMatch[1] === 'fix' ? 'main' : 'develop';
+  const typeMatch = branch.match(/^(feat|chore|hotfix)\//);
+  const baseBranch = typeMatch && typeMatch[1] === 'hotfix' ? 'main' : 'develop';
 
   let prTitle = item.title || branch;
   let prBody = '';

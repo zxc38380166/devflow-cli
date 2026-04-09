@@ -17,7 +17,7 @@ main ─────────────────────────
  │
  ├── release/v1.2.0 ─────────────────────── 上線凍結分支（詳見第五節）
  │
- └── fix/CARD-ID-簡述 ────────────────── 緊急修復（從 main 分出）
+ └── hotfix/CARD-ID-簡述 ────────────────── 緊急修復（從 main 分出）
 ```
 
 ### 命名規則
@@ -26,7 +26,7 @@ main ─────────────────────────
 |------|------|-------------|----------|
 | 功能開發 | `feat/CARD-ID-簡述` | `develop` | → PR 回 `develop` |
 | 雜務重構 | `chore/CARD-ID-簡述` | `develop` | → PR 回 `develop` |
-| 緊急修復 | `fix/CARD-ID-簡述` | `main` | → PR 回 `main`，再同步回 `develop` |
+| 緊急修復 | `hotfix/CARD-ID-簡述` | `main` | → PR 回 `main`，再同步回 `develop` |
 | 上線凍結 | `release/vX.Y.Z` | `develop` | → PR 回 `main`，tag 後同步回 `develop` |
 
 - 分支名稱**必須帶 Trello Card 短碼**（如 `abc123`），這是所有自動化串接的 key
@@ -45,7 +45,7 @@ devflow task
 互動流程：
 
 ```
-? 任務類型：[feat] / [chore] / [fix]
+? 任務類型：[feat] / [chore] / [hotfix]
 ? 標題：新增 ATM 對帳功能
 ? 描述：支援每日自動比對 ATM 入帳記錄與訂單狀態...
 ? 指派給：@chenshoupei
@@ -101,20 +101,20 @@ devflow pr
 
 ```bash
 devflow task
-# 選擇類型：fix
-# 自動從 main 建立 fix/CARD-ID-xxx 分支
+# 選擇類型：hotfix
+# 自動從 main 建立 hotfix/CARD-ID-xxx 分支
 ```
 
 ```
 main ──┬──────────────────────── (正式環境有 bug)
        │
-       └── fix/abc123-fix ── 修復 ──→ PR 回 main
+       └── hotfix/abc123-fix ── 修復 ──→ PR 回 main
                                            │
                                            ├─→ merge 後自動 tag（如 v1.1.1）
                                            └─→ GitHub Action 自動開 PR 回 develop
 ```
 
-**關鍵：** fix merge 回 main 後，由 GitHub Action **自動建立一個 PR** 將變更同步回 `develop`，避免遺忘。
+**關鍵：** hotfix merge 回 main 後，由 GitHub Action **自動建立一個 PR** 將變更同步回 `develop`，避免遺忘。
 
 ---
 
@@ -415,7 +415,7 @@ feat: 新增功能    ← 缺少 Card ID
 ```bash
 # 合法
 feat/abc123-atm-reconciliation
-fix/def456-fix-amount
+hotfix/def456-fix-amount
 release/v1.2.0
 
 # 不合法（被 hook 擋下）
@@ -498,7 +498,7 @@ feat/new-feature       ← 缺少 Card ID
      │ GitHub Action 自動觸發   │
      ├─────────────────────────┤
      │ • Trello 卡片 → Done    │
-     │ • fix → 自動 PR 回      │
+     │ • hotfix → 自動 PR 回   │
      │   develop               │
      │ • release → tag + 同步  │
      │   回 develop            │
@@ -524,7 +524,7 @@ feat/new-feature       ← 缺少 Card ID
 ### 待實作
 
 - [ ] GitHub Actions workflow：Trello 狀態同步（PR merge → Done）
-- [ ] GitHub Actions workflow：fix 自動 PR 回 develop
+- [ ] GitHub Actions workflow：hotfix 自動 PR 回 develop
 - [ ] husky + commitlint 設定
 - [ ] pre-push hook：分支命名驗證
 - [ ] PR template
