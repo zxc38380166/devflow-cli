@@ -85,12 +85,15 @@ function ensureDevelop(cwd) {
 
 // ── Branch name builder ──
 
-function buildBranchName(type, shortLink, title) {
+const BRANCH_PREFIX = { feature: 'feat', chore: 'chore', hotfix: 'fix' };
+
+function buildBranchName(type, idShort, title) {
+  const prefix = BRANCH_PREFIX[type] || type;
   const slug = title
     .replace(/[^\u4e00-\u9fffa-z0-9]+/gi, '-')
     .replace(/^-|-$/g, '')
     .slice(0, 15);
-  return `${type}/${shortLink}-${slug}`;
+  return `${prefix}/${idShort}-${slug}`;
 }
 
 function getRepoRole(repoName) {
@@ -130,7 +133,7 @@ async function handleTask(item) {
 
   if (item.createBranch) {
     const baseBranch = item.taskType === 'hotfix' ? 'main' : 'develop';
-    const branchName = buildBranchName(item.taskType, card.shortLink, item.title);
+    const branchName = buildBranchName(item.taskType, String(card.idShort), item.title);
     console.log(`🔀 建立分支: ${branchName} (from ${baseBranch})`);
 
     try {
