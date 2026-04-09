@@ -1,6 +1,6 @@
 {
   "name": "devflow-cli",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Generic dev workflow CLI — Trello + Git + GitHub integration for any project",
   "type": "module",
   "bin": {
