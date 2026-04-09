@@ -1,6 +1,6 @@
 # devflow-cli
 
-Team dev workflow CLI — Trello + Git + GitHub + Scaffold 自動化串接。
+團隊開發流程 CLI — Trello + Git + GitHub + Scaffold 自動化串接。
 
 適用於任何專案，不綁定特定 repo。搭配 Claude Code `/scaffold` 指令可一鍵建置完整全端專案。
 
@@ -15,18 +15,92 @@ yarn add -D github:zxc38380166/devflow-cli
 
 ## 指令總覽
 
+| 指令 | 說明 |
+|------|------|
+| `npx devflow setup` | 一鍵建置新專案（產生 scaffold.config.json） |
+| `npx devflow init` | 初始化開發流程（Trello + Board + Repos） |
+| `npx devflow link` | 將目前 repo 連結到專案 |
+| `npx devflow export` | 匯出專案設定（不含憑證） |
+| `npx devflow import <file>` | 匯入專案設定檔 |
+| `npx devflow use <project>` | 切換專案 |
+| `npx devflow task` | 建立 Trello 卡片 + Git 分支 |
+| `npx devflow task -y` | 同上，跳過分支建立確認（適用 CI / Claude Code） |
+| `npx devflow pr` | 建立 PR + 同步 Trello 狀態 |
+| `npx devflow release:create <ver>` | 建立 release 分支 + 發 PR → main |
+| `npx devflow release:finish <ver>` | 完成 release（merge PR + tag + 同步 develop） |
+| `npx devflow release:finish <ver> -y` | 同上，自動 merge（跳過確認） |
+
+## Claude Code Skill（非互動式）
+
+除了互動式 CLI，也提供 `/devflow` skill 供 Claude Code 自動執行。透過 `devflow.jsonc` 定義操作：
+
+```jsonc
+[
+  // 建立 Trello 卡片 + Git 分支
+  {
+    "action": "task",
+    "repo": "WT-be",
+    "taskType": "feature",
+    "title": "新增代付註記 API",
+    "description": "PM 可讀的描述",
+    "labels": ["backend"],
+    "members": [],
+    "dueDate": "",
+    "createBranch": true
+  },
+
+  // 建立 PR
+  { "action": "pr", "repo": "WT-be", "title": "feat: 新增代付註記 API" },
+
+  // Release 流程
+  { "action": "release:create", "repo": "WT-be", "version": "1.0.16" },
+  { "action": "release:finish", "repo": "WT-be", "version": "1.0.16" }
+]
 ```
-npx devflow setup                 一鍵建置新專案（產生 scaffold.config.json）
-npx devflow init                  初始化開發流程（Trello + Board + Repos）
-npx devflow link                  將目前 repo 連結到專案
-npx devflow export                匯出專案設定（不含憑證）
-npx devflow import <file>         匯入專案設定檔
-npx devflow use <project>         切換專案
-npx devflow task                  建立 Trello 卡片 + Git 分支
-npx devflow pr                    建立 PR + 同步 Trello
-npx devflow release:create <ver>  建立 release 分支
-npx devflow release:finish <ver>  完成 release（tag + 同步）
+
+執行方式：
+
+```bash
+node node_modules/devflow-cli/.claude/skills/devflow/run.mjs
 ```
+
+## Trello 卡片命名
+
+卡片名稱格式為 `[專案名][角色縮寫] 標題`，例如：
+
+```
+[WT-ec][FE] 發票歷程稅額%數添加
+[WT-be][BE] 代付註記功能後端 API
+```
+
+角色縮寫對照：
+
+| 角色 | 縮寫 |
+|------|------|
+| frontend | FE |
+| backend | BE |
+| admin | ADMIN |
+| mobile | MB |
+
+## 分支命名
+
+分支名稱格式為 `{前綴}/{Trello卡片單號}-{標題slug}`，例如：
+
+```
+feat/61-代付註記功能後端-API-Sw
+chore/42-重構登入模組
+fix/58-修復金額計算錯誤
+```
+
+前綴對照：
+
+| 任務類型 | 分支前綴 | 從哪切 | 合併回 |
+|----------|----------|--------|--------|
+| feature | `feat` | develop | → develop |
+| chore | `chore` | develop | → develop |
+| hotfix | `fix` | main | → main，再同步回 develop |
+
+> slug 最多 15 字元，支援中文
 
 ## 一鍵開箱（搭配 /scaffold）
 
@@ -40,7 +114,7 @@ npx devflow setup          # 互動式收集參數 → 產生 scaffold.config.js
 
 ## Trello 憑證取得
 
-`devflow init` 過程中會需要 Trello API Key 和 Token，取得步驟：
+`devflow init` 過程中會需要 Trello API Key 和 Token：
 
 1. 前往 https://trello.com/power-ups/admin
 2. 點「**New**」建立一個 Power-Up（名稱隨意，如 devflow）
@@ -56,22 +130,13 @@ npx devflow setup          # 互動式收集參數 → 產生 scaffold.config.js
 main ─────────────────────────────────────── 正式環境（production）
  │
  ├── develop ─────────────────────────────── 開發主線（PR 合併目標）
- │    ├── feature/CARD-ID-簡述              ← 功能開發
- │    └── chore/CARD-ID-簡述               ← 雜務、重構
+ │    ├── feat/61-功能名稱                   ← 功能開發
+ │    └── chore/42-重構名稱                  ← 雜務、重構
  │
  ├── release/v1.2.0 ─────────────────────── 上線凍結分支
  │
- └── hotfix/CARD-ID-簡述 ────────────────── 緊急修復（從 main 分出）
+ └── fix/58-修復名稱 ───────────────────── 緊急修復（從 main 分出）
 ```
-
-| 類型 | 格式 | 從哪切 | 合併回 |
-|------|------|--------|--------|
-| 功能開發 | `feature/CARD-ID-簡述` | `develop` | → `develop` |
-| 雜務重構 | `chore/CARD-ID-簡述` | `develop` | → `develop` |
-| 緊急修復 | `hotfix/CARD-ID-簡述` | `main` | → `main`，再同步回 `develop` |
-| 上線凍結 | `release/vX.Y.Z` | `develop` | → `main`，tag 後同步回 `develop` |
-
-> 分支名稱必須帶 Trello Card 短碼（如 `abc123`），簡述用 kebab-case
 
 ---
 
@@ -86,14 +151,14 @@ main ─────────────────────────
                               ▼
             ┌─────────────────────────────────────┐
             │  Trello: Backlog → In Progress      │
-            │  Git:    develop → feature/abc123-x  │
+            │  Git:    develop → feat/61-功能名稱   │
             │  Remote: git push -u origin          │
             └─────────────────┬───────────────────┘
                               │
                               ▼
             ┌─────────────────────────────────────┐
             │  開發 & 提交                         │
-            │  git commit -m "feat(abc123): ..."   │
+            │  git commit -m "feat: ..."          │
             └─────────────────┬───────────────────┘
                               │
                               ▼
@@ -101,6 +166,7 @@ main ─────────────────────────
             │  devflow pr                          │
             │  建立 PR → develop                   │
             │  Trello: In Progress → In Review     │
+            │  卡片留言 PR 連結                     │
             └─────────────────┬───────────────────┘
                               │
                               ▼
@@ -133,13 +199,13 @@ main ─────────────────────────
                 ▼
  ┌─────────────────────────────────────────────────────────────────────┐
  │  devflow task（選擇 hotfix）                                        │
- │  從 main 切出 hotfix/abc123-fix-xxx                                │
+ │  從 main 切出 fix/58-修復名稱                                       │
  └────────────────────────────┬────────────────────────────────────────┘
                               │
                               ▼
             ┌─────────────────────────────────────┐
             │  修復 & 提交                         │
-            │  git commit -m "fix(abc123): ..."    │
+            │  git commit -m "fix: ..."           │
             └─────────────────┬───────────────────┘
                               │
                               ▼
@@ -155,16 +221,16 @@ main ─────────────────────────
             │  merge 進 main                       │
             │                                      │
             │  ├→ 打 tag（如 v1.1.1）              │
-            │  ├→ 自動建立 PR 同步回 develop        │
+            │  ├→ 自動同步回 develop                │
             │  └→ Trello 卡片 → Done               │
             └─────────────────────────────────────┘
 
  時間軸：
  main    ──●──────────────────●── merge ──●── tag v1.1.1
            │                  ▲
-           └── hotfix/abc123 ─┘
+           └── fix/58-修復名稱 ┘
                                      │
- develop ─────────────────────────── ● ← 自動同步 PR
+ develop ─────────────────────────── ● ← 自動同步
 ```
 
 ---
@@ -192,11 +258,11 @@ main ─────────────────────────
  ┌─────────────────────────────────────────────────────────────────────┐
  │  devflow release:finish v1.2.0                                     │
  │                                                                    │
- │  1. 建立 PR: release/v1.2.0 → main                                │
- │  2. merge 後打 Git tag v1.2.0                                      │
- │  3. 自動建立 PR: main → develop（同步 release 期間的 fix）          │
+ │  1. merge PR: release/v1.2.0 → main                               │
+ │  2. 打 Git tag v1.2.0                                              │
+ │  3. 同步 main → develop                                            │
  │  4. 刪除 release/v1.2.0 分支                                       │
- │  5. Trello 所有相關卡片 → Done                                     │
+ │  5. Trello：該 repo 在 In Review 的卡片 → Done                     │
  └─────────────────────────────────────────────────────────────────────┘
 
  時間軸：
@@ -204,7 +270,7 @@ main ─────────────────────────
                                              ▲
  release ─────── fix ── fix ─────────────────┘
           ▲                                        │
- develop ─┴── feat D ── feat E ─────────────────── ● ← 同步 PR
+ develop ─┴── feat D ── feat E ─────────────────── ● ← 同步
 ```
 
 ---
@@ -227,10 +293,8 @@ main ─────────────────────────
 | 觸發事件 | Trello 動作 |
 |----------|-------------|
 | `devflow task` | 建卡 → **Backlog** → **In Progress** |
-| `devflow pr` | 卡片 → **In Review** |
-| PR approved | 卡片加上 approved 標籤 |
-| PR changes requested | 卡片 → **In Progress** |
-| PR merged | 卡片 → **Done** |
+| `devflow pr` | 卡片 → **In Review**，留言 PR 連結 |
+| `devflow release:finish` | 該 repo 的 In Review 卡片 → **Done** |
 
 ## 組員加入
 
@@ -247,8 +311,18 @@ npx devflow import devflow-xxx.json
 npx devflow link
 ```
 
+## 設定檔
+
+| 檔案 | 位置 | 說明 |
+|------|------|------|
+| `~/.devflow/config.json` | 全域 | Trello 憑證 + activeProject |
+| `~/.devflow/projects/<name>/config.json` | 全域 | 專案 Board、Repos、Labels、Members |
+| `.devflow.json` | 各 repo 根目錄 | 連結專案 + repo 角色 |
+| `devflow.jsonc` | workspace 根目錄 | Claude Code Skill 操作定義 |
+
 ## 文件
 
 - [操作手冊](docs/guide/wt-cli.md)
 - [開發流程規範](docs/guide/workflow.md)
 - [/scaffold 指令說明](.claude/commands/scaffold.md)
+- [/devflow Skill 說明](.claude/skills/devflow/SKILL.md)
