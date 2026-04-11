@@ -160,8 +160,8 @@ function buildBranchName(type, idShort, title) {
 }
 
 function getRepoRole(repoName) {
-  for (const [role, info] of Object.entries(REPOS)) {
-    if (info.name === repoName) return role;
+  for (const [, info] of Object.entries(REPOS)) {
+    if (info.name === repoName) return info.role;
   }
   return repoName;
 }
