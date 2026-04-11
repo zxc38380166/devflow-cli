@@ -350,14 +350,20 @@ async function handlePR(item) {
   // 如果有 Trello card，取得資訊
   if (shortLink) {
     try {
-      const card = await trelloGet(`/cards/${shortLink}`);
-      if (card.name) prTitle = item.title || card.name;
-      prBody = `## Trello\n${card.shortUrl}\n\n`;
+      // idShort 是數字，需透過 board 搜尋找到卡片
+      const cards = await trelloGet(`/boards/${BOARD_ID}/cards`, { fields: 'idShort,name,shortUrl,shortLink' });
+      const card = cards.find((c) => String(c.idShort) === shortLink);
+      if (card) {
+        prTitle = item.title || card.name;
+        prBody = `## Trello\n${card.shortUrl}\n\n`;
 
-      // 移到 In Review
-      await trelloPut(`/cards/${card.id}`, { idList: LISTS.inReview });
-      console.log('✅ Trello 卡片已移到 In Review');
-    } catch {}
+        // 移到 In Review
+        await trelloPut(`/cards/${card.id}`, { idList: LISTS.inReview });
+        console.log('✅ Trello 卡片已移到 In Review');
+      }
+    } catch (err) {
+      console.error(`⚠️ Trello 查詢失敗: ${err.message}`);
+    }
   }
 
   prBody += `## 變更摘要\n- \n\n## Checklist\n- [ ] 自測通過\n- [ ] 相關 i18n 已更新\n- [ ] 無 console.log 殘留`;
@@ -376,9 +382,12 @@ async function handlePR(item) {
     // 在 Trello 卡片留言
     if (shortLink) {
       try {
-        const card = await trelloGet(`/cards/${shortLink}`);
-        await trelloPost(`/cards/${card.id}/actions/comments`, { text: `🔗 PR: ${prUrl}` });
-        console.log('✅ 已在 Trello 卡片留言 PR 連結');
+        const cards = await trelloGet(`/boards/${BOARD_ID}/cards`, { fields: 'idShort' });
+        const card = cards.find((c) => String(c.idShort) === shortLink);
+        if (card) {
+          await trelloPost(`/cards/${card.id}/actions/comments`, { text: `🔗 PR: ${prUrl}` });
+          console.log('✅ 已在 Trello 卡片留言 PR 連結');
+        }
       } catch {}
     }
   } catch (err) {
