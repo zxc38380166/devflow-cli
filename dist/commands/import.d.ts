@@ -1,1 +1,1 @@
-export declare function importCommand(filePath: string): Promise<void>;
+export declare function importCommand(filePath?: string): Promise<void>;

@@ -1,12 +1,12 @@
-/** ~/.devflow/config.json */
+/** ~/.devflow/config.json — only Trello credentials + optional activeProject */
 export interface GlobalConfig {
-    activeProject: string;
+    activeProject?: string;
     trello: {
         apiKey: string;
         token: string;
     };
 }
-/** ~/.devflow/projects/{name}/config.json */
+/** ~/.devflow/projects/{name}/config.json (legacy, still supported for import) */
 export interface ProjectConfig {
     projectName: string;
     repos: Record<string, RepoEntry>;
@@ -23,7 +23,17 @@ export interface BoardConfig {
     labels: Record<string, string>;
     members: Record<string, string>;
 }
-/** .devflow.json in each repo root */
+/**
+ * .devflow.json in each repo root — the NEW unified format.
+ * Contains full project config so team members need zero setup beyond Trello credentials.
+ */
+export interface DevflowConfig {
+    project: string;
+    repoRole: string;
+    repos: Record<string, RepoEntry>;
+    board: BoardConfig;
+}
+/** Legacy .devflow.json (minimal pointer only) */
 export interface RepoLocalConfig {
     project: string;
     repoRole: string;
@@ -37,7 +47,7 @@ export interface ResolvedConfig {
     };
     board: BoardConfig;
     repos: Record<string, RepoEntry>;
-    currentRepo: RepoLocalConfig | null;
+    currentRepo: DevflowConfig | RepoLocalConfig | null;
 }
 export type TaskType = 'feat' | 'chore' | 'hotfix';
 export interface TrelloCard {

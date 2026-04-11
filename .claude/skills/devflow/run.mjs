@@ -2,13 +2,28 @@ import { readFileSync, existsSync, readdirSync } from 'fs';
 import { execSync } from 'child_process';
 import { resolve, join, basename } from 'path';
 
-// Read devflow config
+// ── Load config: prefer .devflow.json (unified), fallback to ~/.devflow ──
+
 const home = process.env.HOME || process.env.USERPROFILE;
 const globalConfig = JSON.parse(readFileSync(resolve(home, '.devflow/config.json'), 'utf8'));
 
-// ── Auto-detect project from current directory ──
-// Prevent operating on the wrong project when activeProject doesn't match cwd.
-function detectProject() {
+function findDevflowJson() {
+  let dir = resolve(process.cwd());
+  while (true) {
+    const candidate = join(dir, '.devflow.json');
+    if (existsSync(candidate)) {
+      const parsed = JSON.parse(readFileSync(candidate, 'utf8'));
+      // New unified format has board + repos
+      if (parsed.board && parsed.repos) return parsed;
+    }
+    const parent = resolve(dir, '..');
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return null;
+}
+
+function detectProjectLegacy() {
   const projectsDir = resolve(home, '.devflow/projects');
   if (!existsSync(projectsDir)) return globalConfig.activeProject;
 
@@ -23,13 +38,9 @@ function detectProject() {
     if (!existsSync(configPath)) continue;
     const config = JSON.parse(readFileSync(configPath, 'utf8'));
     const repos = config.repos || {};
-
-    // Check if cwd basename matches a repo name or role
     for (const [role, entry] of Object.entries(repos)) {
       if (entry.name === dirName || role === dirName) return name;
     }
-
-    // Check if cwd contains subdirectories matching project repos
     const repoNames = Object.entries(repos).flatMap(([role, entry]) => [entry.name, role]);
     if (repoNames.some((r) => existsSync(join(cwd, r)))) return name;
   }
@@ -37,14 +48,23 @@ function detectProject() {
   return globalConfig.activeProject;
 }
 
-const detectedProject = detectProject();
-if (detectedProject !== globalConfig.activeProject) {
-  console.log(`⚠️  activeProject 為「${globalConfig.activeProject}」，但當前目錄屬於「${detectedProject}」，已自動切換。`);
-}
+// Try unified .devflow.json first
+const devflowJson = findDevflowJson();
+let projectConfig;
 
-const projectConfig = JSON.parse(
-  readFileSync(resolve(home, `.devflow/projects/${detectedProject}/config.json`), 'utf8'),
-);
+if (devflowJson) {
+  console.log(`📂 使用 .devflow.json（專案: ${devflowJson.project}）`);
+  projectConfig = devflowJson;
+} else {
+  // Legacy: use ~/.devflow/projects/
+  const detectedProject = detectProjectLegacy();
+  if (detectedProject !== globalConfig.activeProject) {
+    console.log(`⚠️  activeProject 為「${globalConfig.activeProject}」，但當前目錄屬於「${detectedProject}」，已自動切換。`);
+  }
+  projectConfig = JSON.parse(
+    readFileSync(resolve(home, `.devflow/projects/${detectedProject}/config.json`), 'utf8'),
+  );
+}
 
 const TRELLO_KEY = globalConfig.trello.apiKey;
 const TRELLO_TOKEN = globalConfig.trello.token;

@@ -65,6 +65,17 @@ export function setActiveProject(name) {
     saveGlobalConfig(global);
 }
 // ── Repo-local config (.devflow.json) ──
+/**
+ * Check if a parsed .devflow.json is the new unified format (has board + repos).
+ */
+export function isDevflowConfig(obj) {
+    return (typeof obj === 'object' &&
+        obj !== null &&
+        'project' in obj &&
+        'repoRole' in obj &&
+        'board' in obj &&
+        'repos' in obj);
+}
 export function loadRepoLocalConfig(cwd) {
     const searchDir = cwd || process.cwd();
     // walk up to find .devflow.json
@@ -73,7 +84,8 @@ export function loadRepoLocalConfig(cwd) {
         const candidate = join(dir, '.devflow.json');
         if (existsSync(candidate)) {
             try {
-                return JSON.parse(readFileSync(candidate, 'utf-8'));
+                const parsed = JSON.parse(readFileSync(candidate, 'utf-8'));
+                return parsed;
             }
             catch {
                 return null;
@@ -124,11 +136,21 @@ function detectProjectFromDirectory() {
 export function resolveConfig() {
     const global = loadGlobalConfig();
     if (!global) {
-        console.error('尚未設定，請先執行 devflow init');
+        console.error('尚未設定 Trello 憑證，請先執行 devflow init 或 devflow import');
         process.exit(1);
     }
-    // Priority: .devflow.json > auto-detect from directory > activeProject
     const repoLocal = loadRepoLocalConfig();
+    // ── New unified .devflow.json (has board + repos) → no need for ~/.devflow/projects ──
+    if (repoLocal && isDevflowConfig(repoLocal)) {
+        return {
+            projectName: repoLocal.project,
+            trello: global.trello,
+            board: repoLocal.board,
+            repos: repoLocal.repos,
+            currentRepo: repoLocal,
+        };
+    }
+    // ── Legacy .devflow.json (only project + repoRole) or no .devflow.json ──
     let projectName = repoLocal?.project ?? null;
     if (!projectName) {
         const detected = detectProjectFromDirectory();
@@ -141,7 +163,7 @@ export function resolveConfig() {
         }
     }
     if (!projectName) {
-        projectName = global.activeProject;
+        projectName = global.activeProject ?? null;
     }
     if (!projectName) {
         console.error('無法判斷目前專案，請在 repo 內放置 .devflow.json 或執行 devflow use <project>');

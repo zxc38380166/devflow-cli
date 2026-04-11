@@ -36,8 +36,8 @@ program
     .description('匯出專案設定（不含憑證，可分享給組員）')
     .action(exportCommand);
 program
-    .command('import <config-file>')
-    .description('匯入專案設定檔（組員加入用）')
+    .command('import [config-file]')
+    .description('匯入專案設定（無參數時自動偵測 .devflow.json，有參數時匯入舊版設定檔）')
     .action(importCommand);
 program
     .command('task')

@@ -1,7 +1,7 @@
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
-import type { GlobalConfig, ProjectConfig, RepoLocalConfig, ResolvedConfig } from '../types/index.js';
+import type { GlobalConfig, ProjectConfig, RepoLocalConfig, DevflowConfig, ResolvedConfig } from '../types/index.js';
 
 const CONFIG_BASE = join(homedir(), '.devflow');
 const GLOBAL_CONFIG_PATH = join(CONFIG_BASE, 'config.json');
@@ -74,7 +74,21 @@ export function setActiveProject(name: string): void {
 
 // ── Repo-local config (.devflow.json) ──
 
-export function loadRepoLocalConfig(cwd?: string): RepoLocalConfig | null {
+/**
+ * Check if a parsed .devflow.json is the new unified format (has board + repos).
+ */
+export function isDevflowConfig(obj: unknown): obj is DevflowConfig {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'project' in obj &&
+    'repoRole' in obj &&
+    'board' in obj &&
+    'repos' in obj
+  );
+}
+
+export function loadRepoLocalConfig(cwd?: string): DevflowConfig | RepoLocalConfig | null {
   const searchDir = cwd || process.cwd();
   // walk up to find .devflow.json
   let dir = resolve(searchDir);
@@ -82,7 +96,8 @@ export function loadRepoLocalConfig(cwd?: string): RepoLocalConfig | null {
     const candidate = join(dir, '.devflow.json');
     if (existsSync(candidate)) {
       try {
-        return JSON.parse(readFileSync(candidate, 'utf-8')) as RepoLocalConfig;
+        const parsed = JSON.parse(readFileSync(candidate, 'utf-8'));
+        return parsed as DevflowConfig | RepoLocalConfig;
       } catch {
         return null;
       }
@@ -138,12 +153,24 @@ function detectProjectFromDirectory(): string | null {
 export function resolveConfig(): ResolvedConfig {
   const global = loadGlobalConfig();
   if (!global) {
-    console.error('尚未設定，請先執行 devflow init');
+    console.error('尚未設定 Trello 憑證，請先執行 devflow init 或 devflow import');
     process.exit(1);
   }
 
-  // Priority: .devflow.json > auto-detect from directory > activeProject
   const repoLocal = loadRepoLocalConfig();
+
+  // ── New unified .devflow.json (has board + repos) → no need for ~/.devflow/projects ──
+  if (repoLocal && isDevflowConfig(repoLocal)) {
+    return {
+      projectName: repoLocal.project,
+      trello: global.trello,
+      board: repoLocal.board,
+      repos: repoLocal.repos,
+      currentRepo: repoLocal,
+    };
+  }
+
+  // ── Legacy .devflow.json (only project + repoRole) or no .devflow.json ──
   let projectName = repoLocal?.project ?? null;
 
   if (!projectName) {
@@ -160,7 +187,7 @@ export function resolveConfig(): ResolvedConfig {
   }
 
   if (!projectName) {
-    projectName = global.activeProject;
+    projectName = global.activeProject ?? null;
   }
 
   if (!projectName) {

@@ -59,13 +59,15 @@ export async function linkCommand() {
             validate: (v) => v.length > 0 || '必填',
         });
     }
-    // Write .devflow.json
+    // Write unified .devflow.json (full config, not just pointer)
     const config = {
         project: projectName,
         repoRole,
+        repos: project.repos,
+        board: project.board,
     };
     const filePath = join(gitRoot, '.devflow.json');
     writeFileSync(filePath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
     log.success(`已建立 ${filePath}`);
-    log.info('建議將 .devflow.json 加入版控，這樣其他組員 clone 後就自動連結');
+    log.info('請將 .devflow.json 加入版控，組員 clone 後即可直接使用 devflow（僅需設定 Trello 憑證）');
 }

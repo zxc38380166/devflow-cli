@@ -1,5 +1,5 @@
 import { input, confirm, select } from '@inquirer/prompts';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import { execSync } from 'node:child_process';
 import { loadGlobalConfig, saveGlobalConfig, saveProjectConfig, getConfigBase } from '../utils/config.js';
@@ -210,12 +210,40 @@ export async function initCommand(options) {
         trello: { apiKey, token },
     };
     saveGlobalConfig(globalConfig);
+    const boardConfig = { boardId, boardUrl, lists, labels, members };
     const projectConfig = {
         projectName,
         repos,
-        board: { boardId, boardUrl, lists, labels, members },
+        board: boardConfig,
     };
     saveProjectConfig(projectName, projectConfig);
+    // ── Write .devflow.json per repo (new unified format) ──
+    const cwd = process.cwd();
+    const writtenFiles = [];
+    for (const [role, repo] of Object.entries(repos)) {
+        const repoDir = join(cwd, repo.name);
+        const devflowPath = existsSync(repoDir) ? join(repoDir, '.devflow.json') : null;
+        if (devflowPath) {
+            const devflowConfig = {
+                project: projectName,
+                repoRole: role,
+                repos,
+                board: boardConfig,
+            };
+            writeFileSync(devflowPath, JSON.stringify(devflowConfig, null, 2) + '\n', 'utf-8');
+            writtenFiles.push(devflowPath);
+        }
+    }
+    // Also write for the workspace/platform directory itself
+    const platformDevflow = {
+        project: projectName,
+        repoRole: 'platform',
+        repos,
+        board: boardConfig,
+    };
+    const platformPath = join(cwd, '.devflow.json');
+    writeFileSync(platformPath, JSON.stringify(platformDevflow, null, 2) + '\n', 'utf-8');
+    writtenFiles.push(platformPath);
     console.log();
     log.success(`專案 "${projectName}" 初始化完成！`);
     log.info(`設定目錄: ${getConfigBase()}`);
@@ -225,69 +253,23 @@ export async function initCommand(options) {
     log.info(`Labels: ${Object.keys(labels).join(', ')}`);
     log.info(`Members: ${Object.keys(members).join(', ')}`);
     console.log();
+    if (writtenFiles.length) {
+        log.success(`已自動產生 .devflow.json:`);
+        for (const f of writtenFiles) {
+            log.info(`  ${f}`);
+        }
+        console.log();
+    }
     log.success('── 下一步 ──');
     console.log();
-    if (detected) {
-        // 既有專案流程
-        log.info('【既有專案】請依序執行以下操作：');
-        console.log();
-        console.log('  1. 進入每個 repo 目錄，執行 devflow link 連結專案：');
-        for (const repo of Object.values(repos)) {
-            console.log(`     cd ${repo.name} && devflow link`);
-        }
-        console.log();
-        console.log('  2. 在每個 repo 建立 develop 和 release 分支（若尚未建立）：');
-        for (const repo of Object.values(repos)) {
-            console.log(`     cd ${repo.name}`);
-            console.log(`       git checkout -b develop && git push -u origin develop`);
-            console.log(`       git checkout -b release && git push -u origin release`);
-            console.log(`       git checkout develop`);
-        }
-        console.log();
-        console.log('  3. 匯出設定檔分享給組員：');
-        console.log('     devflow export');
-        console.log();
-        console.log('  4. 組員收到設定檔後執行：');
-        console.log('     devflow import <config-file>');
-        console.log('     cd <repo> && devflow link');
-        console.log();
-        console.log('  5. 開始開發任務：');
-        console.log('     cd <repo> && devflow task');
-    }
-    else {
-        // 全新專案流程
-        log.info('【全新專案】請依序執行以下操作：');
-        console.log();
-        console.log('  1. 若需要建置專案骨架，先產生 scaffold 設定：');
-        console.log('     devflow setup');
-        console.log('     然後在 Claude Code 中執行 /scaffold 來初始化專案結構');
-        console.log();
-        console.log('  2. 為每個 repo 建立 Git 倉庫並推送到 GitHub：');
-        console.log('     cd <repo> && git init && gh repo create');
-        console.log();
-        console.log('  3. 進入每個 repo 目錄，執行 devflow link 連結專案：');
-        for (const repo of Object.values(repos)) {
-            console.log(`     cd ${repo.name} && devflow link`);
-        }
-        console.log();
-        console.log('  4. 在每個 repo 建立 develop 和 release 分支：');
-        for (const repo of Object.values(repos)) {
-            console.log(`     cd ${repo.name}`);
-            console.log(`       git checkout -b develop && git push -u origin develop`);
-            console.log(`       git checkout -b release && git push -u origin release`);
-            console.log(`       git checkout develop`);
-        }
-        console.log();
-        console.log('  5. 匯出設定檔分享給組員：');
-        console.log('     devflow export');
-        console.log();
-        console.log('  6. 組員收到設定檔後執行：');
-        console.log('     devflow import <config-file>');
-        console.log('     cd <repo> && devflow link');
-        console.log();
-        console.log('  7. 開始開發任務：');
-        console.log('     cd <repo> && devflow task');
-    }
+    log.info('1. 將 .devflow.json 加入版控並推送：');
+    console.log('     git add .devflow.json && git commit -m "chore: add devflow config" && git push');
+    console.log();
+    log.info('2. 組員 clone 後只需設定 Trello 憑證：');
+    console.log('     devflow import   （會自動偵測 .devflow.json，只需輸入 API Key + Token）');
+    console.log();
+    log.info('3. 開始開發任務：');
+    console.log('     cd <repo> && devflow task');
     console.log();
 }
 async function collectRepos() {

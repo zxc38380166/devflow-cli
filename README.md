@@ -21,7 +21,7 @@ yarn add -D github:zxc38380166/devflow-cli
 | `npx devflow init` | 初始化開發流程（Trello + Board + Repos） |
 | `npx devflow link` | 將目前 repo 連結到專案 |
 | `npx devflow export` | 匯出專案設定（不含憑證） |
-| `npx devflow import <file>` | 匯入專案設定檔 |
+| `npx devflow import [file]` | 匯入專案設定（無參數時自動偵測 .devflow.json） |
 | `npx devflow use <project>` | 切換專案 |
 | `npx devflow task` | 建立 Trello 卡片 + Git 分支 |
 | `npx devflow task -y` | 同上，跳過分支建立確認（適用 CI / Claude Code） |
@@ -287,27 +287,33 @@ main ─────────────────────────
 
 ## 組員加入
 
+每個 repo 都內建 `.devflow.json`（含完整專案設定），組員 clone 後只需設定 Trello 憑證即可使用：
+
 ```bash
 # 情境 A：有 workspace 權限
 git clone --recursive git@github.com:org/xx-platform.git
 cd xx-platform && yarn install
-npx devflow import devflow-xxx.json
+npx devflow import          # 自動偵測 .devflow.json，只需輸入 Trello API Key + Token
 
 # 情境 B：只有單一 repo 權限
 git clone git@github.com:org/xx-ec.git
 cd xx-ec && yarn add -D github:zxc38380166/devflow-cli
-npx devflow import devflow-xxx.json
-npx devflow link
+npx devflow import          # 同上，自動偵測
 ```
+
+> **不再需要** `devflow import <file>` + `devflow link` 的兩步驟流程。
+> 舊版 `devflow import devflow-xxx.json` 仍可使用（向下相容）。
 
 ## 設定檔
 
 | 檔案 | 位置 | 說明 |
 |------|------|------|
-| `~/.devflow/config.json` | 全域 | Trello 憑證 + activeProject |
-| `~/.devflow/projects/<name>/config.json` | 全域 | 專案 Board、Repos、Labels、Members |
-| `.devflow.json` | 各 repo 根目錄 | 連結專案 + repo 角色 |
+| `~/.devflow/config.json` | 全域 | Trello 憑證（apiKey + token），不含專案資訊 |
+| `.devflow.json` | 各 repo 根目錄 | **統一設定檔**：專案名稱 + repo 角色 + Board + Repos（應加入版控） |
 | `devflow.jsonc` | workspace 根目錄 | Claude Code Skill 操作定義 |
+| `~/.devflow/projects/<name>/config.json` | 全域 | （舊版相容）專案 Board、Repos、Labels、Members |
+
+> `.devflow.json` 包含完整專案設定，組員 clone 後只需在 `~/.devflow/config.json` 設定 Trello 憑證即可使用。
 
 ## 文件
 
