@@ -86,6 +86,40 @@ export function loadRepoLocalConfig(cwd) {
     }
     return null;
 }
+// ── Auto-detect project from current directory ──
+/**
+ * 當沒有 .devflow.json 時，掃描所有專案的 repos 設定，
+ * 比對當前目錄（或上層目錄）名稱是否匹配某個專案的 repo。
+ * 避免因 activeProject 設定錯誤而將操作（如建卡片、建分支）執行到錯誤的專案。
+ */
+function detectProjectFromDirectory() {
+    const cwd = resolve(process.cwd());
+    const dirName = cwd.split('/').pop() || '';
+    const projects = listProjects();
+    for (const name of projects) {
+        const config = loadProjectConfig(name);
+        if (!config?.repos)
+            continue;
+        for (const [role, entry] of Object.entries(config.repos)) {
+            // Match: cwd ends with repo name, or cwd basename matches repo name/role
+            if (entry.name === dirName || role === dirName) {
+                return name;
+            }
+        }
+    }
+    // Also check if cwd contains subdirectories matching a project's repos
+    for (const name of projects) {
+        const config = loadProjectConfig(name);
+        if (!config?.repos)
+            continue;
+        const repoNames = Object.entries(config.repos).flatMap(([role, entry]) => [entry.name, role]);
+        const matchCount = repoNames.filter((r) => existsSync(join(cwd, r))).length;
+        if (matchCount > 0) {
+            return name;
+        }
+    }
+    return null;
+}
 // ── Resolve merged config (used by all commands) ──
 export function resolveConfig() {
     const global = loadGlobalConfig();
@@ -93,9 +127,22 @@ export function resolveConfig() {
         console.error('尚未設定，請先執行 devflow init');
         process.exit(1);
     }
-    // Determine project name: .devflow.json in repo > activeProject
+    // Priority: .devflow.json > auto-detect from directory > activeProject
     const repoLocal = loadRepoLocalConfig();
-    const projectName = repoLocal?.project ?? global.activeProject;
+    let projectName = repoLocal?.project ?? null;
+    if (!projectName) {
+        const detected = detectProjectFromDirectory();
+        if (detected) {
+            if (global.activeProject && detected !== global.activeProject) {
+                console.error(`⚠️  注意：activeProject 為「${global.activeProject}」，但當前目錄屬於「${detected}」，已自動切換。` +
+                    `\n   若不正確，請執行 devflow use <project> 或在 repo 內放置 .devflow.json。`);
+            }
+            projectName = detected;
+        }
+    }
+    if (!projectName) {
+        projectName = global.activeProject;
+    }
     if (!projectName) {
         console.error('無法判斷目前專案，請在 repo 內放置 .devflow.json 或執行 devflow use <project>');
         process.exit(1);

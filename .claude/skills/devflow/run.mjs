@@ -1,20 +1,66 @@
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync, readdirSync } from 'fs';
 import { execSync } from 'child_process';
-import { resolve } from 'path';
+import { resolve, join, basename } from 'path';
 
 // Read devflow config
 const home = process.env.HOME || process.env.USERPROFILE;
 const globalConfig = JSON.parse(readFileSync(resolve(home, '.devflow/config.json'), 'utf8'));
-const activeProject = globalConfig.activeProject;
+
+// ── Auto-detect project from current directory ──
+// Prevent operating on the wrong project when activeProject doesn't match cwd.
+function detectProject() {
+  const projectsDir = resolve(home, '.devflow/projects');
+  if (!existsSync(projectsDir)) return globalConfig.activeProject;
+
+  const cwd = resolve(process.cwd());
+  const dirName = basename(cwd);
+  const projects = readdirSync(projectsDir, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => d.name);
+
+  for (const name of projects) {
+    const configPath = join(projectsDir, name, 'config.json');
+    if (!existsSync(configPath)) continue;
+    const config = JSON.parse(readFileSync(configPath, 'utf8'));
+    const repos = config.repos || {};
+
+    // Check if cwd basename matches a repo name or role
+    for (const [role, entry] of Object.entries(repos)) {
+      if (entry.name === dirName || role === dirName) return name;
+    }
+
+    // Check if cwd contains subdirectories matching project repos
+    const repoNames = Object.entries(repos).flatMap(([role, entry]) => [entry.name, role]);
+    if (repoNames.some((r) => existsSync(join(cwd, r)))) return name;
+  }
+
+  return globalConfig.activeProject;
+}
+
+const detectedProject = detectProject();
+if (detectedProject !== globalConfig.activeProject) {
+  console.log(`⚠️  activeProject 為「${globalConfig.activeProject}」，但當前目錄屬於「${detectedProject}」，已自動切換。`);
+}
+
 const projectConfig = JSON.parse(
-  readFileSync(resolve(home, `.devflow/projects/${activeProject}/config.json`), 'utf8'),
+  readFileSync(resolve(home, `.devflow/projects/${detectedProject}/config.json`), 'utf8'),
 );
 
 const TRELLO_KEY = globalConfig.trello.apiKey;
 const TRELLO_TOKEN = globalConfig.trello.token;
-const LISTS = projectConfig.board.lists;
-const LABELS = projectConfig.board.labels;
-const MEMBERS = projectConfig.board.members;
+const board = projectConfig.board || projectConfig.trello;
+const BOARD_ID = board.boardId;
+// Normalize list keys: support both "Backlog" and "backlog" / "In Progress" and "inProgress"
+const rawLists = board.lists;
+const LISTS = {
+  backlog: rawLists.backlog || rawLists.Backlog,
+  toDo: rawLists.toDo || rawLists['To Do'],
+  inProgress: rawLists.inProgress || rawLists['In Progress'],
+  inReview: rawLists.inReview || rawLists['In Review'],
+  done: rawLists.done || rawLists.Done,
+};
+const LABELS = board.labels;
+const MEMBERS = board.members;
 const REPOS = projectConfig.repos;
 
 // Read tasks JSONC (path passed as argv[2] or default)
