@@ -382,7 +382,7 @@ Create the Nuxt 4 project in `<name>-ec/`:
 
 4. **Create files**:
 
-   **`nuxt.config.ts`** — With `css: ['~/assets/css/main.css']`, modules (ui, eslint, image, i18n, pinia, vueuse, @vee-validate/nuxt), runtimeConfig for apiBaseUrl, i18n config (zh-TW default, en-US), devServer port 3010
+   **`nuxt.config.ts`** — With `css: ['~/assets/css/main.css']`, `nitro: { preset: 'node-server' }` (IMPORTANT: must set node-server preset so build outputs to .output/ for Docker), modules (ui, eslint, image, i18n, pinia, vueuse, @vee-validate/nuxt), runtimeConfig for apiBaseUrl, i18n config (zh-TW default, en-US), devServer port 3010
 
    **`app/app.vue`** — NuxtLayout + NuxtPage
 
