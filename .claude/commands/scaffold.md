@@ -382,7 +382,7 @@ Create the Nuxt 4 project in `<name>-ec/`:
 
 4. **Create files**:
 
-   **`nuxt.config.ts`** — With modules (ui, eslint, image, i18n, pinia, vueuse, @vee-validate/nuxt), runtimeConfig for apiBaseUrl, i18n config (zh-TW default, en-US), devServer port 3010
+   **`nuxt.config.ts`** — With `css: ['~/assets/css/main.css']`, modules (ui, eslint, image, i18n, pinia, vueuse, @vee-validate/nuxt), runtimeConfig for apiBaseUrl, i18n config (zh-TW default, en-US), devServer port 3010
 
    **`app/app.vue`** — NuxtLayout + NuxtPage
 
@@ -480,7 +480,7 @@ Create the Next.js project in `<name>-ims/`:
 
    **`src/lib/utils.ts`** — cn() utility (clsx + tailwind-merge)
 
-   **`src/hooks/useApi.ts`** — useApiQuery (React Query GET wrapper) + useApiMutation
+   **`src/hooks/useApi.ts`** — useApiQuery (React Query GET wrapper) + useApiMutation (IMPORTANT: in useApiMutation, handle `delete` method separately since axios delete signature is `delete(url, config?)` not `delete(url, data?)` — use `request.delete(url, { data })` for delete, `request[method](url, data)` for others)
 
    **`src/api/index.ts`** — API registry with queryKeys factory
 
